@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { config } from "@/../blinkbook.config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,9 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "goBlink Docs",
-  description:
-    "Documentation for goBlink — the cross-chain crypto transfer and payment platform.",
+  title: config.title,
+  description: config.description,
   icons: {
     icon: "/favicon.svg",
   },
@@ -26,8 +26,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cssVars = {
+    "--bb-primary": config.theme.primary,
+    "--bb-secondary": config.theme.secondary,
+    "--bb-background": config.theme.background,
+    "--bb-surface": config.theme.surface,
+    "--bb-border": config.theme.border,
+    "--bb-text-primary": config.theme.text.primary,
+    "--bb-text-secondary": config.theme.text.secondary,
+    "--bb-text-muted": config.theme.text.muted,
+    "--bb-gradient-from": config.logo.gradient.from,
+    "--bb-gradient-to": config.logo.gradient.to,
+  } as React.CSSProperties;
+
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" style={cssVars}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

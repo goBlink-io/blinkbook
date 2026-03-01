@@ -3,6 +3,8 @@ import { getDocBySlug, getAllSlugs } from "@/lib/mdx";
 import { mdxComponents } from "@/components/docs/mdx-components";
 import { Breadcrumbs } from "@/components/docs/breadcrumbs";
 import { Pagination } from "@/components/docs/pagination";
+import { Feedback } from "@/components/docs/feedback";
+import { config } from "@/../blinkbook.config";
 
 export async function generateStaticParams() {
   return getAllSlugs().map((slug) => ({ slug }));
@@ -17,7 +19,7 @@ export async function generateMetadata({
   const doc = await getDocBySlug(slug);
   if (!doc) return {};
   return {
-    title: `${doc.frontmatter.title} — goBlink Docs`,
+    title: `${doc.frontmatter.title} — ${config.title}`,
     description: doc.frontmatter.description,
   };
 }
@@ -47,6 +49,7 @@ export default async function DocPage({
       <div className="docs-content">
         <Content components={mdxComponents} />
       </div>
+      <Feedback slug={slug.join("/")} />
       <Pagination slug={slug} />
     </article>
   );

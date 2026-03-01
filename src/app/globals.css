@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: #09090b;
-  --color-foreground: #fafafa;
-  --color-muted: #a1a1aa;
-  --color-border: #27272a;
-  --color-surface: #18181b;
+  --color-background: var(--bb-background, #09090b);
+  --color-foreground: var(--bb-text-primary, #fafafa);
+  --color-muted: var(--bb-text-secondary, #a1a1aa);
+  --color-border: var(--bb-border, #27272a);
+  --color-surface: var(--bb-surface, #18181b);
   --color-surface-hover: #1f1f23;
-  --color-accent-blue: #2563eb;
-  --color-accent-violet: #7c3aed;
+  --color-accent-blue: var(--bb-primary, #2563eb);
+  --color-accent-violet: var(--bb-secondary, #7c3aed);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -48,6 +48,7 @@ body {
   overflow-x: auto;
   font-size: 0.875rem;
   line-height: 1.7;
+  -webkit-overflow-scrolling: touch;
 }
 
 [data-rehype-pretty-code-figure] code {
@@ -61,12 +62,12 @@ body {
 }
 
 [data-rehype-pretty-code-figure] [data-highlighted-line] {
-  background: rgba(37, 99, 235, 0.1);
+  background: color-mix(in srgb, var(--color-accent-blue) 10%, transparent);
   border-left-color: var(--color-accent-blue);
 }
 
 [data-rehype-pretty-code-figure] [data-highlighted-chars] {
-  background: rgba(37, 99, 235, 0.2);
+  background: color-mix(in srgb, var(--color-accent-blue) 20%, transparent);
   border-radius: 0.25rem;
   padding: 0.125rem 0.25rem;
 }

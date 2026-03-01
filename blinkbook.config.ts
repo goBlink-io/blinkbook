@@ -97,6 +97,14 @@ export const config = {
     codeTabs: true,
   },
 
+  /** Version switcher */
+  versions: {
+    current: "v1.0",
+    available: [
+      { label: "v1.0 (Latest)", value: "v1.0", path: "/docs" },
+    ],
+  },
+
   /** Analytics (future) */
   analytics: {
     /** Google Analytics ID */

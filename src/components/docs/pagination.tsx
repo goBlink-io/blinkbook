@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { navigation, flattenNav } from "@/config/navigation";
+import { config } from "@/../blinkbook.config";
 
 export function Pagination({ slug }: { slug: string[] }) {
+  if (!config.features.pagination) return null;
+
   const currentHref = "/docs/" + slug.join("/");
   const flat = flattenNav(navigation);
   const idx = flat.findIndex((l) => l.href === currentHref);

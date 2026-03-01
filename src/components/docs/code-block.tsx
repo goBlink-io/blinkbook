@@ -2,6 +2,7 @@
 
 import { useState, useRef, type ReactNode } from "react";
 import { Check, Copy } from "lucide-react";
+import { config } from "@/../blinkbook.config";
 
 export function CodeBlock({
   children,
@@ -32,13 +33,15 @@ export function CodeBlock({
           {lang}
         </div>
       )}
-      <button
-        onClick={copy}
-        className="absolute top-2 right-2 p-1.5 rounded-md bg-surface/80 border border-border text-muted hover:text-foreground opacity-0 group-hover:opacity-100 transition-all"
-        aria-label="Copy code"
-      >
-        {copied ? <Check size={14} /> : <Copy size={14} />}
-      </button>
+      {config.features.copyCode && (
+        <button
+          onClick={copy}
+          className="absolute top-2 right-2 p-1.5 rounded-md bg-surface/80 border border-border text-muted hover:text-foreground opacity-0 group-hover:opacity-100 transition-all"
+          aria-label="Copy code"
+        >
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+        </button>
+      )}
       <pre
         ref={preRef}
         className={`bg-[#0d1117] border border-border rounded-lg p-4 ${lang ? "pt-8" : ""} overflow-x-auto text-sm leading-relaxed ${className || ""}`}

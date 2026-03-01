@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { config } from "@/../blinkbook.config";
 
 function capitalize(s: string) {
   return s
@@ -8,6 +9,7 @@ function capitalize(s: string) {
 }
 
 export function Breadcrumbs({ slug }: { slug: string[] }) {
+  if (!config.features.breadcrumbs) return null;
   const crumbs = slug.map((segment, i) => ({
     label: capitalize(segment),
     href: "/docs/" + slug.slice(0, i + 1).join("/"),

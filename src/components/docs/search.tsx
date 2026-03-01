@@ -99,9 +99,9 @@ export function SearchDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[5vh] sm:pt-[15vh]">
       <div className="fixed inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative w-full max-w-lg mx-4 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden">
+      <div className="relative w-full h-full sm:h-auto max-w-lg sm:mx-4 bg-surface sm:border border-border sm:rounded-xl shadow-2xl overflow-hidden flex flex-col">
         <div className="flex items-center gap-3 px-4 border-b border-border">
           <Search size={16} className="text-muted shrink-0" />
           <input
@@ -109,20 +109,20 @@ export function SearchDialog({
             value={query}
             onChange={(e) => search(e.target.value)}
             placeholder="Search documentation…"
-            className="flex-1 py-3.5 bg-transparent text-sm text-foreground placeholder:text-muted outline-none"
+            className="flex-1 py-3.5 bg-transparent text-base sm:text-sm text-foreground placeholder:text-muted outline-none"
           />
-          <button onClick={onClose} className="text-muted hover:text-foreground">
+          <button onClick={onClose} className="text-muted hover:text-foreground p-2 min-h-[44px] min-w-[44px] flex items-center justify-center">
             <X size={16} />
           </button>
         </div>
 
         {results.length > 0 && (
-          <div className="max-h-80 overflow-y-auto p-2">
+          <div className="flex-1 overflow-y-auto p-2 sm:max-h-80">
             {results.map((result, i) => (
               <button
                 key={result.href}
                 onClick={() => navigate(result.href)}
-                className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                className={`w-full flex items-start gap-3 px-3 py-3 sm:py-2.5 rounded-lg text-left transition-colors min-h-[44px] ${
                   i === selected ? "bg-accent-blue/10" : "hover:bg-surface-hover"
                 }`}
               >
