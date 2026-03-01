@@ -1,30 +1,30 @@
 /**
  * BlinkBook Configuration
- * 
+ *
  * Customize your documentation site by editing this file.
  * All branding, navigation, and content settings are controlled here.
  */
 
 export const config = {
   /** Site name — shown in header, tab title, and footer */
-  name: "goBlink",
+  name: "My Docs",
 
   /** Tagline — shown on the docs landing page */
   tagline: "Documentation",
 
   /** Full site title for SEO */
-  title: "goBlink Documentation",
+  title: "My Docs",
 
   /** Site description for SEO */
-  description: "Everything you need to build with goBlink — guides, API reference, and SDK documentation.",
+  description: "Documentation powered by BlinkBook.",
 
   /** Base URL of the deployed docs site */
-  url: "https://docs.goblink.io",
+  url: "https://example.com",
 
   /** Logo configuration */
   logo: {
     /** Use a Lucide icon name, or set to null to use logoUrl instead */
-    icon: "Zap",
+    icon: "BookOpen",
     /** Gradient colors for the icon background */
     gradient: { from: "#2563eb", to: "#7c3aed" },
     /** URL to a custom logo image (used if icon is null) */
@@ -43,12 +43,9 @@ export const config = {
 
   /** Header links — shown in the top navigation */
   header: {
-    links: [
-      { label: "Website", href: "https://goblink.io" },
-      { label: "Merchant", href: "https://merchant.goblink.io" },
-    ],
+    links: [] as { label: string; href: string }[],
     /** GitHub repo link (shows icon in header). Set to null to hide. */
-    github: "https://github.com/Urban-Blazer/goblink" as string | null,
+    github: null as string | null,
     /** Show search button in header */
     search: true,
   },
@@ -56,11 +53,7 @@ export const config = {
   /** Footer configuration */
   footer: {
     text: "Built with BlinkBook",
-    links: [
-      { label: "goBlink", href: "https://goblink.io" },
-      { label: "Merchant", href: "https://merchant.goblink.io" },
-      { label: "GitHub", href: "https://github.com/Urban-Blazer" },
-    ],
+    links: [] as { label: string; href: string }[],
   },
 
   /** Content directory (relative to project root) */

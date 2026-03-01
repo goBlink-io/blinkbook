@@ -1,0 +1,74 @@
+---
+title: API Reference
+description: Example API documentation with interactive playground.
+---
+
+## Overview
+
+This page demonstrates BlinkBook's API documentation features, including the interactive API playground.
+
+## List Items
+
+Retrieve a list of items from the API.
+
+<ApiPlayground
+  method="GET"
+  endpoint="/api/items"
+  baseUrl="https://jsonplaceholder.typicode.com"
+  headers={{ "Accept": "application/json" }}
+/>
+
+## Create Item
+
+Create a new item via the API.
+
+<ApiPlayground
+  method="POST"
+  endpoint="/api/items"
+  baseUrl="https://jsonplaceholder.typicode.com"
+  headers={{ "Content-Type": "application/json" }}
+  bodySchema={[
+    { name: "title", type: "string", required: true, placeholder: "My Item", description: "The item title" },
+    { name: "body", type: "string", placeholder: "Item description", description: "The item body text" },
+    { name: "userId", type: "number", required: true, placeholder: "1", description: "The user ID" },
+  ]}
+/>
+
+## Components
+
+BlinkBook includes several built-in components you can use in your MDX files:
+
+### Callouts
+
+<Callout type="info">
+  This is an info callout. Use it to highlight important information.
+</Callout>
+
+<Callout type="warning">
+  This is a warning callout. Use it for cautionary notes.
+</Callout>
+
+<Callout type="danger">
+  This is a danger callout. Use it for critical warnings.
+</Callout>
+
+### Diagrams
+
+<Mermaid chart={`
+graph TD
+    A[User Request] --> B{Authenticated?}
+    B -->|Yes| C[Process Request]
+    B -->|No| D[Return 401]
+    C --> E[Return Response]
+`} />
+
+## Response Codes
+
+| Status | Description |
+|--------|------------|
+| 200 | Success |
+| 201 | Created |
+| 400 | Bad Request |
+| 401 | Unauthorized |
+| 404 | Not Found |
+| 500 | Server Error |

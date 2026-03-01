@@ -1,0 +1,83 @@
+---
+title: Getting Started
+description: Quick setup guide for your BlinkBook documentation site.
+---
+
+## Prerequisites
+
+- Node.js 18+
+- pnpm, npm, or yarn
+
+## Configuration
+
+All settings live in `blinkbook.config.ts` at the project root. Here you can customize:
+
+- **Site name and tagline** — shown in the header
+- **Theme** — choose a preset or define custom colors
+- **Navigation** — defined in `src/config/navigation.ts`
+- **Features** — toggle search, TOC, pagination, and more
+
+## Adding Pages
+
+Create `.mdx` files in `src/content/`. Each file needs frontmatter:
+
+```mdx
+---
+title: My Page Title
+description: A brief description of this page.
+---
+
+Your content here...
+```
+
+## Navigation
+
+Update `src/config/navigation.ts` to add links to your sidebar:
+
+```typescript
+export const navigation: Navigation = [
+  {
+    title: "Documentation",
+    items: [
+      { title: "Getting Started", href: "/docs/getting-started" },
+      { title: "API Reference", href: "/docs/api-reference" },
+    ],
+  },
+];
+```
+
+## Themes
+
+BlinkBook comes with 6 built-in themes. Set the theme in your config:
+
+```typescript
+// Use a preset
+theme: "ocean",
+
+// Or define custom colors
+theme: {
+  primary: "#2563eb",
+  secondary: "#7c3aed",
+  background: "#09090b",
+  surface: "#18181b",
+  border: "#27272a",
+  text: { primary: "#fafafa", secondary: "#a1a1aa", muted: "#71717a" },
+},
+```
+
+Available presets: `midnight`, `ocean`, `forest`, `sunset`, `lavender`, `arctic`.
+
+## Deployment
+
+Deploy to Vercel with a single command:
+
+```bash
+vercel deploy
+```
+
+Or build for any Node.js hosting:
+
+```bash
+pnpm build
+pnpm start
+```

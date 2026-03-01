@@ -1,0 +1,12 @@
+{
+  "name": "create-blinkbook",
+  "version": "0.1.0",
+  "description": "Create a new BlinkBook documentation site",
+  "bin": { "create-blinkbook": "./dist/index.js" },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "files": ["dist", "template"]
+}
