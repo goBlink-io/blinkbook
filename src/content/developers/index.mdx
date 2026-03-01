@@ -1,0 +1,128 @@
+---
+title: Developer Overview
+description: Everything you need to integrate goBlink cross-chain crypto payments into your application, marketplace, or platform.
+---
+
+## Introduction
+
+goBlink is a cross-chain crypto transfer platform that lets merchants accept payments in any major cryptocurrency and receive settlement in their preferred currency. The goBlink Merchant API provides a complete set of tools for creating payments, generating invoices, managing refunds, and tracking transaction status across multiple blockchains.
+
+Whether you are building an e-commerce storefront, a SaaS billing system, or a peer-to-peer marketplace, the goBlink API gives you a single integration point for accepting crypto payments without worrying about chain-specific logic, gas fees, or wallet management.
+
+## How It Works
+
+A typical goBlink payment flow looks like this:
+
+1. **Create a payment** -- Your server calls `POST /payments` with the amount, currency, and metadata.
+2. **Redirect the customer** -- goBlink returns a `checkout_url`. Send your customer there, or embed the checkout using the Embeddable Button.
+3. **Customer pays** -- The customer selects their preferred chain and token, then confirms the transaction in their wallet.
+4. **Cross-chain settlement** -- goBlink routes the payment across chains if necessary, handling bridging and swaps automatically.
+5. **Webhook notification** -- Your server receives a `payment.completed` event with the final transaction details.
+6. **Settlement** -- Funds are deposited to your configured payout wallet in your settlement currency.
+
+## Core Concepts
+
+### Payments
+
+A Payment is the fundamental object in goBlink. It represents a single charge to a customer. Payments can be created via the API, through a hosted checkout page, or using the Embeddable Button. Each payment has a unique `payment_id` and transitions through a defined set of statuses: `pending`, `processing`, `completed`, `failed`, and `expired`.
+
+### Invoices
+
+An Invoice is a reusable payment request that you can send to a customer. Unlike a one-time payment, an invoice can be viewed, shared via link, and paid at the customer's convenience. Invoices support line items, tax calculations, and memo fields.
+
+### Refunds
+
+Refunds can be issued for any completed payment, either in full or partially. Refunds are processed on the same chain and token the customer originally paid with. Refund processing typically takes 1--5 minutes depending on chain congestion.
+
+### Webhooks
+
+Webhooks deliver real-time event notifications to your server. You register a webhook endpoint URL in your dashboard, and goBlink sends signed HTTP POST requests whenever a relevant event occurs. All webhook payloads are signed with HMAC-SHA256 so you can verify their authenticity.
+
+## Environments
+
+goBlink provides two environments for development and production use:
+
+| Environment | Base URL | API Key Prefix | Rate Limit |
+|-------------|----------|----------------|------------|
+| **Test** | `https://merchant.goblink.io/api/v1` | `gb_test_` | 1000 req/min |
+| **Live** | `https://merchant.goblink.io/api/v1` | `gb_live_` | 100 req/min |
+
+Both environments share the same base URL. The environment is determined by your API key prefix. Test mode uses simulated blockchain transactions so you can develop and test without spending real funds.
+
+### Test Mode Behavior
+
+- Payments are confirmed instantly (no actual on-chain transactions).
+- You can trigger specific outcomes using test amounts (e.g., `amount: 0.01` always succeeds, `amount: 6.66` always fails).
+- Webhooks fire in real time, identical to production.
+- Test wallets are pre-funded with tokens on all supported chains.
+
+## Supported Chains and Tokens
+
+goBlink currently supports the following chains:
+
+| Chain | Chain ID | Native Token | Supported Stablecoins |
+|-------|----------|--------------|----------------------|
+| Ethereum | `ethereum` | ETH | USDC, USDT, DAI |
+| Polygon | `polygon` | MATIC | USDC, USDT |
+| Arbitrum | `arbitrum` | ETH | USDC, USDT |
+| Optimism | `optimism` | ETH | USDC |
+| Base | `base` | ETH | USDC |
+| Solana | `solana` | SOL | USDC |
+| Avalanche | `avalanche` | AVAX | USDC, USDT |
+| BNB Chain | `bsc` | BNB | USDC, USDT, BUSD |
+
+## API Response Format
+
+All API responses follow a consistent JSON structure:
+
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": "pay_9f8a7b6c5d4e3f2a",
+    "status": "completed",
+    "amount": "50.00",
+    "currency": "USD"
+  }
+}
+```
+
+Error responses include a machine-readable error code and a human-readable message:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_AMOUNT",
+    "message": "Amount must be greater than zero.",
+    "status": 422
+  }
+}
+```
+
+## Getting Started
+
+To start integrating goBlink:
+
+1. [Create a merchant account](https://merchant.goblink.io/signup) and complete verification.
+2. Navigate to **Settings > API Keys** in the dashboard to generate your test and live keys.
+3. Follow the [Quickstart Guide](/developers/quickstart) to make your first API call.
+4. Set up [Webhooks](/developers/webhooks) to receive real-time payment notifications.
+5. Go live by switching from your `gb_test_` key to your `gb_live_` key.
+
+## SDKs and Libraries
+
+goBlink offers official client libraries to speed up integration:
+
+| Language | Package | Install |
+|----------|---------|---------|
+| Node.js / TypeScript | `@goblink/sdk` | `npm install @goblink/sdk` |
+| Python | `goblink` | `pip install goblink` |
+
+Community-maintained libraries are available for Go, Ruby, and PHP. See the [SDK Reference](/developers/sdk) for full documentation.
+
+## Need Help?
+
+- **Developer Discord** -- Join `#dev-support` at [discord.gg/goblink](https://discord.gg/goblink) for real-time help.
+- **API Status** -- Check [status.goblink.io](https://status.goblink.io) for uptime and incident reports.
+- **Email Support** -- Reach the integrations team at `developers@goblink.io`.

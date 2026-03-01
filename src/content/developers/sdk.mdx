@@ -1,0 +1,493 @@
+---
+title: SDK Reference
+description: Complete reference for the official goBlink Node.js/TypeScript and Python SDKs for integrating cross-chain crypto payments.
+---
+
+## Overview
+
+The goBlink SDKs provide a typed, idiomatic interface for the goBlink Merchant API. Instead of constructing HTTP requests manually, you can use method calls with built-in error handling, automatic retries, and TypeScript type definitions.
+
+## Installation
+
+### Node.js / TypeScript
+
+```bash
+npm install @goblink/sdk
+```
+
+Or with yarn:
+
+```bash
+yarn add @goblink/sdk
+```
+
+Or with pnpm:
+
+```bash
+pnpm add @goblink/sdk
+```
+
+**Requirements:** Node.js 18+ (uses native `fetch`). Full TypeScript support is included -- no separate `@types` package needed.
+
+### Python
+
+```bash
+pip install goblink
+```
+
+**Requirements:** Python 3.9+. Uses `httpx` for async support.
+
+## Initialization
+
+### Node.js
+
+```javascript
+import { GoBlink } from "@goblink/sdk";
+
+const client = new GoBlink({
+  apiKey: process.env.GOBLINK_API_KEY, // gb_live_xxx or gb_test_xxx
+});
+```
+
+### TypeScript
+
+```typescript
+import { GoBlink, type Payment, type Invoice } from "@goblink/sdk";
+
+const client = new GoBlink({
+  apiKey: process.env.GOBLINK_API_KEY!,
+});
+```
+
+### Python
+
+```python
+from goblink import GoBlink
+
+client = GoBlink(api_key=os.environ["GOBLINK_API_KEY"])
+```
+
+### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `apiKey` | string | -- | Your goBlink API key (required). |
+| `baseUrl` | string | `https://merchant.goblink.io/api/v1` | Override the API base URL (useful for proxying). |
+| `timeout` | number | `30000` | Request timeout in milliseconds. |
+| `maxRetries` | number | `2` | Number of automatic retries on transient errors (5xx, network). |
+| `idempotencyKeyGenerator` | function | auto-generated UUID | Custom function to generate idempotency keys. |
+
+```typescript
+const client = new GoBlink({
+  apiKey: process.env.GOBLINK_API_KEY!,
+  timeout: 15000,
+  maxRetries: 3,
+});
+```
+
+## Payments
+
+### Create a Payment
+
+```typescript
+const payment = await client.payments.create({
+  amount: "99.99",
+  currency: "USD",
+  description: "Annual Pro subscription",
+  metadata: {
+    userId: "usr_8473",
+    plan: "pro_annual",
+  },
+  redirectUrl: "https://app.example.com/success",
+  cancelUrl: "https://app.example.com/cancel",
+  acceptedChains: ["ethereum", "polygon", "base"],
+  acceptedTokens: ["USDC"],
+  customerEmail: "alice@example.com",
+  referenceId: "sub_renewal_2026_03",
+  expirationMinutes: 60,
+});
+
+console.log(payment.paymentId);   // "pay_a1b2c3d4e5f6g7h8"
+console.log(payment.checkoutUrl); // "https://checkout.goblink.io/pay_a1b2c3d4..."
+console.log(payment.status);      // "pending"
+```
+
+**Python:**
+
+```python
+payment = client.payments.create(
+    amount="99.99",
+    currency="USD",
+    description="Annual Pro subscription",
+    metadata={"user_id": "usr_8473"},
+    redirect_url="https://app.example.com/success",
+    accepted_chains=["ethereum", "polygon", "base"],
+    accepted_tokens=["USDC"],
+    customer_email="alice@example.com",
+)
+
+print(payment.payment_id)    # "pay_a1b2c3d4e5f6g7h8"
+print(payment.checkout_url)  # "https://checkout.goblink.io/pay_a1b2c3d4..."
+```
+
+### Retrieve a Payment
+
+```typescript
+const payment = await client.payments.retrieve("pay_a1b2c3d4e5f6g7h8");
+
+console.log(payment.status);        // "completed"
+console.log(payment.chain);         // "polygon"
+console.log(payment.token);         // "USDC"
+console.log(payment.txHash);        // "0x7d3f8c..."
+console.log(payment.payerAddress);  // "0x742d35..."
+```
+
+**Python:**
+
+```python
+payment = client.payments.retrieve("pay_a1b2c3d4e5f6g7h8")
+print(payment.status)  # "completed"
+```
+
+### List Payments
+
+```typescript
+const { data, hasMore } = await client.payments.list({
+  status: "completed",
+  limit: 25,
+  createdGte: "2026-02-01T00:00:00Z",
+});
+
+for (const payment of data) {
+  console.log(`${payment.paymentId}: ${payment.amount} ${payment.currency}`);
+}
+```
+
+**Python:**
+
+```python
+result = client.payments.list(status="completed", limit=25)
+for payment in result.data:
+    print(f"{payment.payment_id}: {payment.amount} {payment.currency}")
+```
+
+### Paginate Through All Payments
+
+```typescript
+const allPayments: Payment[] = [];
+
+for await (const payment of client.payments.listAutoPaginate({
+  status: "completed",
+})) {
+  allPayments.push(payment);
+}
+
+console.log(`Total completed payments: ${allPayments.length}`);
+```
+
+**Python:**
+
+```python
+all_payments = []
+for payment in client.payments.list_auto_paginate(status="completed"):
+    all_payments.append(payment)
+```
+
+## Invoices
+
+### Create an Invoice
+
+```typescript
+const invoice = await client.invoices.create({
+  currency: "USD",
+  customerEmail: "client@example.com",
+  customerName: "Acme Corp",
+  invoiceNumber: "INV-2026-0042",
+  lineItems: [
+    {
+      description: "Web development - March 2026",
+      quantity: 40,
+      unitPrice: "25.00",
+    },
+    {
+      description: "Hosting and infrastructure",
+      quantity: 1,
+      unitPrice: "250.00",
+    },
+  ],
+  taxRate: "0.00",
+  memo: "Payment due within 14 days.",
+  dueDate: "2026-03-15",
+  metadata: { project: "website_redesign" },
+});
+
+console.log(invoice.invoiceId);  // "inv_c3d4e5f6g7h8i9j0"
+console.log(invoice.amount);     // "1250.00"
+console.log(invoice.invoiceUrl); // "https://checkout.goblink.io/inv/inv_c3d4..."
+```
+
+### Finalize and Send
+
+```typescript
+await client.invoices.finalize("inv_c3d4e5f6g7h8i9j0", {
+  sendEmail: true,
+});
+```
+
+### Retrieve an Invoice
+
+```typescript
+const invoice = await client.invoices.retrieve("inv_c3d4e5f6g7h8i9j0");
+console.log(invoice.status); // "open" | "paid" | "expired" | "void"
+```
+
+### Void an Invoice
+
+```typescript
+await client.invoices.void("inv_c3d4e5f6g7h8i9j0");
+```
+
+## Refunds
+
+### Create a Refund
+
+```typescript
+const refund = await client.refunds.create({
+  paymentId: "pay_a1b2c3d4e5f6g7h8",
+  amount: "25.00", // Omit for full refund
+  reason: "Customer requested partial refund",
+});
+
+console.log(refund.refundId); // "ref_m1n2o3p4q5r6s7t8"
+console.log(refund.status);   // "processing"
+```
+
+**Python:**
+
+```python
+refund = client.refunds.create(
+    payment_id="pay_a1b2c3d4e5f6g7h8",
+    amount="25.00",
+    reason="Customer requested partial refund",
+)
+print(refund.refund_id)  # "ref_m1n2o3p4q5r6s7t8"
+```
+
+### Retrieve a Refund
+
+```typescript
+const refund = await client.refunds.retrieve("ref_m1n2o3p4q5r6s7t8");
+console.log(refund.status); // "completed"
+```
+
+## Webhooks
+
+The SDK includes a helper for verifying webhook signatures:
+
+### Node.js
+
+```typescript
+import { GoBlink } from "@goblink/sdk";
+
+const isValid = GoBlink.webhooks.verifySignature({
+  payload: rawRequestBody,    // string or Buffer
+  signature: req.headers["x-goblink-signature"],
+  secret: process.env.GOBLINK_WEBHOOK_SECRET!,
+  tolerance: 300,             // Optional: max age in seconds (default 300)
+  timestamp: req.headers["x-goblink-timestamp"],
+});
+
+if (!isValid) {
+  return res.status(401).send("Invalid signature");
+}
+```
+
+### Express.js Middleware
+
+```typescript
+import { GoBlinkWebhookMiddleware } from "@goblink/sdk/express";
+
+app.post(
+  "/webhooks/goblink",
+  GoBlinkWebhookMiddleware({
+    secret: process.env.GOBLINK_WEBHOOK_SECRET!,
+  }),
+  (req, res) => {
+    const event = req.body; // Already verified
+    console.log("Event:", event.type);
+    res.status(200).send("OK");
+  }
+);
+```
+
+### Python
+
+```python
+from goblink import GoBlink
+
+is_valid = GoBlink.webhooks.verify_signature(
+    payload=request.data,
+    signature=request.headers["X-GoBlink-Signature"],
+    secret=os.environ["GOBLINK_WEBHOOK_SECRET"],
+)
+```
+
+## TypeScript Types
+
+The SDK exports all request and response types:
+
+```typescript
+import type {
+  Payment,
+  PaymentCreateParams,
+  PaymentListParams,
+  Invoice,
+  InvoiceCreateParams,
+  Refund,
+  RefundCreateParams,
+  WebhookEvent,
+  PaymentCompletedEvent,
+  PaymentFailedEvent,
+  InvoicePaidEvent,
+  RefundCompletedEvent,
+  PaginatedResponse,
+  GoBlinkError,
+} from "@goblink/sdk";
+```
+
+### Using Types in Your Code
+
+```typescript
+import type { PaymentCreateParams, Payment } from "@goblink/sdk";
+
+async function chargeCustomer(params: PaymentCreateParams): Promise<Payment> {
+  const payment = await client.payments.create(params);
+  console.log(`Created payment ${payment.paymentId}`);
+  return payment;
+}
+```
+
+### Webhook Event Type Narrowing
+
+```typescript
+import type { WebhookEvent, PaymentCompletedEvent } from "@goblink/sdk";
+
+function handleEvent(event: WebhookEvent) {
+  switch (event.type) {
+    case "payment.completed": {
+      // TypeScript narrows the type automatically
+      const data: PaymentCompletedEvent["data"] = event.data;
+      console.log(`Payment ${data.paymentId} completed on ${data.chain}`);
+      break;
+    }
+    case "payment.failed": {
+      console.log(`Payment ${event.data.paymentId} failed: ${event.data.failureReason}`);
+      break;
+    }
+  }
+}
+```
+
+## Error Handling
+
+The SDK throws typed errors that you can catch and inspect:
+
+```typescript
+import { GoBlinkError, RateLimitError, AuthenticationError } from "@goblink/sdk";
+
+try {
+  const payment = await client.payments.create({
+    amount: "-5.00",
+    currency: "USD",
+  });
+} catch (error) {
+  if (error instanceof RateLimitError) {
+    console.log(`Rate limited. Retry after ${error.retryAfter} seconds.`);
+  } else if (error instanceof AuthenticationError) {
+    console.log("Invalid API key.");
+  } else if (error instanceof GoBlinkError) {
+    console.log(`API error: ${error.code} - ${error.message}`);
+    console.log(`Status: ${error.statusCode}`);
+  } else {
+    throw error; // Unexpected error
+  }
+}
+```
+
+**Python:**
+
+```python
+from goblink.errors import GoBlinkError, RateLimitError, AuthenticationError
+
+try:
+    payment = client.payments.create(amount="-5.00", currency="USD")
+except RateLimitError as e:
+    print(f"Rate limited. Retry after {e.retry_after} seconds.")
+except AuthenticationError:
+    print("Invalid API key.")
+except GoBlinkError as e:
+    print(f"API error: {e.code} - {e.message}")
+```
+
+## React Integration
+
+The SDK includes React components and hooks for client-side use:
+
+```typescript
+import { GoBlinkProvider, GoBlinkButton, useGoBlinkCheckout } from "@goblink/sdk/react";
+
+// Wrap your app with the provider
+function App() {
+  return (
+    <GoBlinkProvider apiKey="gb_pub_live_your_publishable_key">
+      <PricingPage />
+    </GoBlinkProvider>
+  );
+}
+
+// Use the button component
+function PricingPage() {
+  return (
+    <GoBlinkButton
+      amount="49.99"
+      currency="USD"
+      description="Pro Plan"
+      onSuccess={(payment) => console.log("Paid!", payment)}
+      theme="dark"
+      size="large"
+    />
+  );
+}
+
+// Or use the hook for custom UIs
+function CustomCheckout() {
+  const { openCheckout, isLoading } = useGoBlinkCheckout();
+
+  const handlePay = () => {
+    openCheckout({
+      amount: "49.99",
+      currency: "USD",
+      description: "Pro Plan",
+      onSuccess: (payment) => console.log("Paid!", payment),
+    });
+  };
+
+  return (
+    <button onClick={handlePay} disabled={isLoading}>
+      {isLoading ? "Processing..." : "Subscribe Now"}
+    </button>
+  );
+}
+```
+
+## Changelog
+
+See the [npm release history](https://www.npmjs.com/package/@goblink/sdk?activeTab=versions) for a full list of changes.
+
+| Version | Date | Changes |
+|---------|------|---------|
+| `1.4.0` | 2026-02-20 | Added `listAutoPaginate` method for automatic cursor pagination. |
+| `1.3.0` | 2026-01-15 | Added React components (`GoBlinkButton`, `GoBlinkProvider`, `useGoBlinkCheckout`). |
+| `1.2.0` | 2025-11-30 | Added invoice `void` and `finalize` methods. |
+| `1.1.0` | 2025-10-10 | Added webhook signature verification helpers. Express middleware. |
+| `1.0.0` | 2025-09-01 | Initial release. Payments, invoices, refunds. TypeScript types. |

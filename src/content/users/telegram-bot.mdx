@@ -1,0 +1,159 @@
+---
+title: Telegram Bot
+description: Send and receive cross-chain crypto transfers directly from Telegram using the goBlink bot.
+---
+
+## Overview
+
+The goBlink Telegram bot lets you send cross-chain crypto transfers without leaving Telegram. Link your wallet, and you can send tokens to anyone -- whether they have a goBlink account, a Telegram account, or just a wallet address. The bot handles all the cross-chain routing through the same 1Click and NEAR Intents infrastructure that powers the web app.
+
+To get started, open Telegram and search for **@goBlinkBot**, or visit [t.me/goBlinkBot](https://t.me/goBlinkBot).
+
+## Setting Up the Bot
+
+### Step 1: Start the Bot
+
+Open a chat with @goBlinkBot and tap **Start** or send `/start`. The bot introduces itself and walks you through initial setup.
+
+### Step 2: Link Your Wallet
+
+Send the `/link` command. The bot replies with a one-time link that opens in your browser. From there:
+
+1. Connect your wallet (MetaMask, WalletConnect, Phantom, NEAR Wallet, etc.).
+2. Sign a message to prove ownership of the wallet. This does not grant the bot any spending permissions.
+3. Return to Telegram. The bot confirms your wallet is linked and displays your address.
+
+You can link multiple wallets by running `/link` again. Use `/wallets` to see all linked wallets and `/switch` to change which wallet is active.
+
+### Step 3: Set Your Default Chain
+
+Send `/setchain` followed by the chain name to set your default source chain. For example:
+
+```
+/setchain arbitrum
+```
+
+This determines which chain the bot uses when you initiate a transfer without specifying a source chain. You can override it per-transfer.
+
+## Sending a Transfer
+
+The primary command for sending crypto is `/send`. The syntax is:
+
+```
+/send [amount] [token] to [address or @username] on [chain]
+```
+
+### Examples
+
+Send 50 USDC to a wallet address on Polygon:
+```
+/send 50 USDC to 0x1234...abcd on polygon
+```
+
+Send 0.5 ETH to a Telegram user on Base:
+```
+/send 0.5 ETH to @alice on base
+```
+
+Send 100 NEAR to a NEAR account:
+```
+/send 100 NEAR to bob.near on near
+```
+
+### Sending to Telegram Users
+
+When you send to a Telegram `@username`, the bot checks if that user has linked a wallet. If they have, the transfer goes to their linked wallet on the specified destination chain. If they have not linked a wallet yet, the bot holds the transfer for 72 hours and notifies the recipient via DM. The recipient can link a wallet within that window to claim the funds. After 72 hours, unclaimed transfers are refunded to your wallet.
+
+## Bot Commands Reference
+
+| Command | Description |
+|---|---|
+| `/start` | Initialize the bot and see the welcome message |
+| `/link` | Link a new wallet to your Telegram account |
+| `/wallets` | List all linked wallets |
+| `/switch` | Switch your active wallet |
+| `/setchain [chain]` | Set your default source chain |
+| `/send [amount] [token] to [dest] on [chain]` | Send a cross-chain transfer |
+| `/balance` | Show token balances for your active wallet |
+| `/history` | Show your recent transfer history |
+| `/status [transfer_id]` | Check the status of a specific transfer |
+| `/rates [token1] [token2]` | Get the current exchange rate between two tokens |
+| `/fees [amount] [token] [source] [dest]` | Estimate fees for a transfer |
+| `/help` | Show the full command reference |
+| `/settings` | Configure notification preferences |
+
+## Checking Balances
+
+Send `/balance` to see the token balances for your active wallet across all supported chains. The bot displays a summary like:
+
+```
+Wallet: 0x1234...abcd
+
+Ethereum:
+  1.25 ETH ($4,375.00)
+  500.00 USDC
+
+Arbitrum:
+  0.10 ETH ($350.00)
+  1,200.00 USDC
+  250.00 USDT
+
+Solana:
+  12.5 SOL ($2,500.00)
+```
+
+Use `/balance [chain]` to see balances for a specific chain only.
+
+## Transfer Status and History
+
+### Checking a Transfer
+
+After initiating a transfer, the bot sends you a message with a transfer ID and live status updates. You can also check any transfer manually:
+
+```
+/status gb_tx_abc123
+```
+
+The bot replies with the current status (submitted, confirming, executing, completing, or done), the transaction hashes, and a link to the tracking page.
+
+### Viewing History
+
+Send `/history` to see your last 10 transfers. Each entry shows the amount, tokens, chains, and status. Use `/history 25` to see the last 25 transfers, or `/history all` to get a full export (the bot sends a CSV file).
+
+## Notifications
+
+The goBlink bot can notify you about:
+
+- **Incoming transfers** -- When someone sends you tokens via goBlink.
+- **Transfer completions** -- When your outgoing transfers finish.
+- **Transfer failures** -- If a transfer cannot be completed and is refunded.
+- **Pending claims** -- When someone sends you tokens but you have not linked a wallet yet.
+
+Configure your notification preferences with `/settings`. You can enable or disable each notification type independently.
+
+## Security Considerations
+
+- **The bot never has access to your private keys.** Wallet linking uses a signed message to prove ownership, and transfers are executed through the same smart contract escrow system as the web app.
+- **Every transfer requires explicit confirmation.** After you send a `/send` command, the bot shows a summary and asks you to confirm before proceeding. You can cancel at this step.
+- **Session tokens expire.** Your Telegram-to-wallet link uses a session token that expires after 30 days of inactivity. If it expires, run `/link` again to re-authenticate.
+- **Two-factor confirmation.** For transfers above $1,000, the bot requires you to confirm via a one-time code sent to your linked email (if configured) or by signing a message in your wallet through a browser link.
+
+## Group Chats and Bots
+
+The goBlink bot can be added to Telegram group chats. In a group, any member can use the bot to send tokens to other group members. This is useful for:
+
+- **Splitting bills** -- One person pays, then uses the bot to collect shares from the group.
+- **Community tipping** -- Members can tip each other for helpful messages.
+- **DAO distributions** -- Admins can send tokens to multiple members.
+
+In group mode, the bot only responds to commands that start with `/send@goBlinkBot` to avoid conflicts with other bots.
+
+## Troubleshooting the Telegram Bot
+
+| Issue | Solution |
+|---|---|
+| Bot does not respond | Make sure you started the bot with `/start`. Check if Telegram's bot API is experiencing downtime. |
+| "Wallet not linked" error | Run `/link` to connect your wallet. Make sure you completed the browser-based signing step. |
+| Transfer stuck on "confirming" | The source chain may be congested. Use `/status [id]` to check. Most transfers resolve within 5 minutes. |
+| Recipient did not receive tokens | Verify the recipient address with `/status [id]`. If the transfer shows "done," the tokens were delivered to the address shown. |
+| Cannot send to @username | The recipient must have a Telegram account. If they have not linked a wallet, the transfer will be held for 72 hours. |

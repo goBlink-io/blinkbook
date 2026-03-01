@@ -1,0 +1,318 @@
+---
+title: Embeddable Button
+description: Add a goBlink pay button to any website with a simple JavaScript snippet or iframe embed for inline crypto checkout.
+---
+
+## Overview
+
+The goBlink Embeddable Button lets you add a "Pay with Crypto" button to any web page without building a custom checkout UI. When a customer clicks the button, a checkout modal opens directly on your site -- no redirects required. It works with any website, including static sites, WordPress, Shopify, and single-page applications.
+
+## Quick Start
+
+Add the goBlink button to your page in two steps:
+
+### Step 1: Add the Script Tag
+
+Include the goBlink embed script in your page's `<head>` or at the end of `<body>`:
+
+```html
+<script src="https://js.goblink.io/embed.js" async></script>
+```
+
+### Step 2: Add the Button Element
+
+Place the button element wherever you want it to appear:
+
+```html
+<div
+  data-goblink-button
+  data-amount="49.99"
+  data-currency="USD"
+  data-description="Pro Plan Monthly"
+  data-api-key="gb_live_your_publishable_key"
+  data-redirect-url="https://yoursite.com/success"
+>
+</div>
+```
+
+That's it. The script automatically renders a styled "Pay with Crypto" button. When clicked, it opens a checkout modal overlay.
+
+## Configuration Attributes
+
+Customize the button using `data-*` attributes on the container element:
+
+### Required Attributes
+
+| Attribute | Description |
+|-----------|-------------|
+| `data-goblink-button` | Marks this element as a goBlink button (no value needed). |
+| `data-amount` | Payment amount as a decimal string (e.g., `"49.99"`). |
+| `data-currency` | Three-letter ISO 4217 currency code (`USD`, `EUR`, `GBP`, `CAD`, `AUD`). |
+| `data-api-key` | Your publishable API key. This is a restricted key safe for client-side use. |
+
+### Optional Attributes
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `data-description` | -- | Payment description shown on the checkout modal. |
+| `data-redirect-url` | -- | URL to navigate to after successful payment. |
+| `data-cancel-url` | -- | URL to navigate to if the customer cancels. |
+| `data-reference-id` | -- | Your unique reference ID for this payment. |
+| `data-customer-email` | -- | Pre-fill the customer email field. |
+| `data-button-text` | `"Pay with Crypto"` | Custom text displayed on the button. |
+| `data-button-theme` | `"light"` | Button theme: `"light"`, `"dark"`, or `"auto"`. |
+| `data-button-size` | `"medium"` | Button size: `"small"`, `"medium"`, `"large"`. |
+| `data-primary-color` | `"#3B82F6"` | Hex color for the button and checkout accent. |
+| `data-accepted-chains` | all | Comma-separated list of chain IDs (e.g., `"ethereum,polygon,base"`). |
+| `data-accepted-tokens` | all | Comma-separated list of token symbols (e.g., `"USDC,USDT"`). |
+| `data-metadata` | -- | JSON string of key-value metadata (e.g., `'{"order_id":"123"}'`). |
+
+## Button Themes and Sizes
+
+### Theme Examples
+
+```html
+<!-- Light theme (default) - white background, dark text -->
+<div data-goblink-button data-button-theme="light" data-amount="25.00" data-currency="USD" data-api-key="gb_live_xxx"></div>
+
+<!-- Dark theme - dark background, white text -->
+<div data-goblink-button data-button-theme="dark" data-amount="25.00" data-currency="USD" data-api-key="gb_live_xxx"></div>
+
+<!-- Auto theme - matches user's system preference -->
+<div data-goblink-button data-button-theme="auto" data-amount="25.00" data-currency="USD" data-api-key="gb_live_xxx"></div>
+```
+
+### Size Examples
+
+| Size | Height | Font Size | Best For |
+|------|--------|-----------|----------|
+| `small` | 36px | 14px | Inline with text, tight layouts |
+| `medium` | 44px | 16px | Standard button placement |
+| `large` | 52px | 18px | Hero sections, prominent CTAs |
+
+## JavaScript API
+
+For more control over the checkout flow, use the JavaScript API instead of (or alongside) the declarative HTML attributes.
+
+### Initializing the Client
+
+```javascript
+<script src="https://js.goblink.io/embed.js" async></script>
+<script>
+  window.addEventListener("goblink:ready", function () {
+    const goblink = window.GoBlink.init({
+      apiKey: "gb_live_your_publishable_key",
+    });
+
+    // Open checkout programmatically
+    document.getElementById("pay-btn").addEventListener("click", function () {
+      goblink.checkout({
+        amount: "49.99",
+        currency: "USD",
+        description: "Pro Plan Monthly",
+        metadata: {
+          order_id: "order_12345",
+          user_id: "usr_789",
+        },
+        redirectUrl: "https://yoursite.com/success",
+        cancelUrl: "https://yoursite.com/cancel",
+        onSuccess: function (payment) {
+          console.log("Payment completed:", payment.payment_id);
+          // Update your UI
+        },
+        onCancel: function () {
+          console.log("Payment cancelled");
+        },
+        onError: function (error) {
+          console.error("Payment error:", error.message);
+        },
+      });
+    });
+  });
+</script>
+```
+
+### Event Callbacks
+
+| Callback | Arguments | Description |
+|----------|-----------|-------------|
+| `onSuccess` | `payment` object | Called when the payment is confirmed. Receives the full payment object. |
+| `onCancel` | none | Called when the customer closes the modal or clicks cancel. |
+| `onError` | `error` object | Called when a payment error occurs. |
+| `onOpen` | none | Called when the checkout modal opens. |
+| `onClose` | none | Called when the checkout modal closes (for any reason). |
+
+### Payment Object in `onSuccess`
+
+```javascript
+{
+  payment_id: "pay_a1b2c3d4e5f6g7h8",
+  status: "completed",
+  amount: "49.99",
+  currency: "USD",
+  chain: "polygon",
+  token: "USDC",
+  tx_hash: "0x7d3f8c...e2a1b0"
+}
+```
+
+## iFrame Embed
+
+If you prefer not to use the JavaScript SDK, you can embed the checkout directly in an iframe:
+
+```html
+<iframe
+  src="https://checkout.goblink.io/embed?amount=49.99&currency=USD&key=gb_live_your_publishable_key&description=Pro+Plan"
+  width="400"
+  height="600"
+  frameborder="0"
+  allow="payment"
+  style="border: none; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.1);"
+></iframe>
+```
+
+### iFrame Query Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `amount` | Yes | Payment amount. |
+| `currency` | Yes | Currency code. |
+| `key` | Yes | Your publishable API key. |
+| `description` | No | Payment description. |
+| `primary_color` | No | Hex accent color (omit the `#`, e.g., `6366F1`). |
+| `bg_color` | No | Hex background color. |
+| `chains` | No | Comma-separated chain IDs. |
+| `tokens` | No | Comma-separated token symbols. |
+| `locale` | No | Language code (`en`, `es`, `fr`, etc.). |
+
+### iFrame Communication
+
+The iframe posts messages to the parent window when events occur:
+
+```javascript
+window.addEventListener("message", function (event) {
+  if (event.origin !== "https://checkout.goblink.io") return;
+
+  const { type, data } = event.data;
+
+  switch (type) {
+    case "goblink:payment:completed":
+      console.log("Payment completed:", data.payment_id);
+      break;
+    case "goblink:payment:cancelled":
+      console.log("Payment was cancelled");
+      break;
+    case "goblink:payment:error":
+      console.error("Payment error:", data.message);
+      break;
+    case "goblink:checkout:resized":
+      // Adjust iframe height dynamically
+      document.querySelector("iframe").style.height = data.height + "px";
+      break;
+  }
+});
+```
+
+## React Component
+
+If you are building with React, use the `@goblink/sdk` package for a native component:
+
+```javascript
+import { GoBlinkButton } from "@goblink/sdk/react";
+
+function PricingPage() {
+  return (
+    <GoBlinkButton
+      apiKey="gb_live_your_publishable_key"
+      amount="49.99"
+      currency="USD"
+      description="Pro Plan Monthly"
+      metadata={{ plan: "pro", interval: "monthly" }}
+      onSuccess={(payment) => {
+        console.log("Paid!", payment.payment_id);
+        router.push("/dashboard");
+      }}
+      onCancel={() => console.log("Cancelled")}
+      theme="dark"
+      size="large"
+      primaryColor="#6366F1"
+    />
+  );
+}
+```
+
+## Custom Styling
+
+You can override the default button styles using CSS:
+
+```css
+/* Target the goBlink button container */
+.goblink-button {
+  font-family: "Inter", sans-serif;
+  border-radius: 8px;
+}
+
+/* Hover state */
+.goblink-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* The checkout modal overlay */
+.goblink-modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+/* The checkout modal container */
+.goblink-modal-container {
+  border-radius: 16px;
+  max-width: 480px;
+}
+```
+
+To fully disable default styles and apply your own, add `data-unstyled="true"`:
+
+```html
+<div
+  data-goblink-button
+  data-unstyled="true"
+  data-amount="49.99"
+  data-currency="USD"
+  data-api-key="gb_live_xxx"
+  class="my-custom-button"
+>
+  Checkout with Crypto
+</div>
+```
+
+## Publishable vs. Secret Keys
+
+The embeddable button uses a **publishable key**, which is safe to include in client-side code. Publishable keys can only create payments -- they cannot read payment details, issue refunds, or access other API endpoints.
+
+| Key Type | Prefix | Use In | Capabilities |
+|----------|--------|--------|-------------|
+| Secret key | `gb_live_` / `gb_test_` | Server only | Full API access |
+| Publishable key | `gb_pub_live_` / `gb_pub_test_` | Client (browser) | Create payments only |
+
+Generate publishable keys in the dashboard under **Settings > API Keys > Publishable Keys**.
+
+## Content Security Policy
+
+If your site uses a Content Security Policy (CSP), add the following directives:
+
+```
+script-src https://js.goblink.io;
+frame-src https://checkout.goblink.io;
+connect-src https://merchant.goblink.io;
+```
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Button does not render | Ensure the `embed.js` script is loaded and the `data-goblink-button` attribute is present. |
+| "Invalid API key" error | Use a publishable key (`gb_pub_live_` or `gb_pub_test_`), not a secret key. |
+| Modal opens but shows blank | Check your CSP settings. The `frame-src` directive must allow `checkout.goblink.io`. |
+| Payment succeeds but `onSuccess` not called | Verify the `goblink:ready` event listener is set up before calling `checkout()`. |
+| Button appears unstyled | Make sure `embed.js` loads successfully (check browser console for 404 errors). |

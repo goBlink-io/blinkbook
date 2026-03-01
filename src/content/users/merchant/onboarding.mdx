@@ -1,0 +1,148 @@
+---
+title: Merchant Onboarding
+description: Set up your goBlink merchant account to accept cross-chain crypto payments with non-custodial settlement to your own wallet.
+---
+
+## Overview
+
+A goBlink merchant account lets you accept crypto payments from customers on any supported chain and receive settlement in your preferred token directly to your own wallet. goBlink never takes custody of your funds -- payments flow through smart contract escrow and settle to the wallet address you configure.
+
+Setting up a merchant account takes about 10 minutes. You do not need to complete KYC for basic usage, though higher volume tiers require identity verification.
+
+## Step 1: Create Your Merchant Account
+
+1. Visit [merchant.goblink.io](https://merchant.goblink.io) and click **Get Started**.
+2. Enter your email address and create a password. Alternatively, sign in with Google or GitHub.
+3. Verify your email by clicking the link sent to your inbox.
+4. You are taken to the merchant dashboard with a setup wizard active.
+
+## Step 2: Configure Your Business Profile
+
+The setup wizard asks for basic information about your business:
+
+| Field | Required | Description |
+|---|---|---|
+| Business name | Yes | Displayed on checkout pages and payment receipts. |
+| Business URL | Optional | Your website. Displayed on checkout pages for customer trust. |
+| Logo | Optional | A square image (at least 256x256 px) displayed on branded checkout pages. |
+| Support email | Yes | Where customers can reach you about payment issues. Displayed on checkout pages. |
+| Industry | Yes | Select from a list (e-commerce, SaaS, freelance, non-profit, etc.). Used for compliance. |
+| Country | Yes | Your country of incorporation or residence. |
+
+You can update all of these later from the **Settings** tab.
+
+## Step 3: Set Up Your Settlement Wallet
+
+This is the most important configuration step. Your settlement wallet is where goBlink delivers payment funds.
+
+1. In the setup wizard, click **Configure Settlement**.
+2. Select your preferred **settlement chain** (e.g., Arbitrum, Polygon, Base).
+3. Select your preferred **settlement token** (e.g., USDC, USDT, ETH).
+4. Enter your **wallet address** on the selected chain.
+5. **Verify ownership** by connecting the wallet and signing a message, or by sending a micro-transaction (0.001 USDC or equivalent) from the wallet to a goBlink verification address.
+
+Once verified, all payments you receive will be settled to this wallet in the token you chose, regardless of what chain or token the customer pays with. goBlink handles the cross-chain conversion automatically.
+
+### Changing Your Settlement Wallet
+
+You can change your settlement wallet at any time from **Settings > Settlement**. Changes take effect immediately for new payments. In-progress payments settle to the wallet that was configured when the payment was initiated.
+
+For security, changing the settlement wallet requires re-verification and triggers an email notification to the account owner.
+
+## Step 4: Generate API Keys
+
+goBlink provides two sets of API keys:
+
+| Key Type | Prefix | Purpose |
+|---|---|---|
+| Live keys | `gb_live_` | Process real payments on mainnet chains. |
+| Test keys | `gb_test_` | Process simulated payments on testnets. No real funds are moved. |
+
+To generate your keys:
+
+1. Navigate to **Settings > API Keys** in the dashboard.
+2. Click **Generate Live Key** and **Generate Test Key**.
+3. Copy and store your keys securely. The secret key is shown only once at creation time. If you lose it, you must rotate to a new key.
+
+You receive both a **publishable key** (safe to include in frontend code) and a **secret key** (must be kept on your server, never exposed to clients).
+
+### Key Permissions
+
+| Key | Can Create Payments | Can Read Payments | Can Issue Refunds | Can Access Webhooks |
+|---|---|---|---|---|
+| Publishable key | Yes | No | No | No |
+| Secret key | Yes | Yes | Yes | Yes |
+
+## Step 5: Configure Webhooks
+
+Webhooks let goBlink notify your server when payment events occur. This is essential for automating order fulfillment.
+
+1. Go to **Settings > Webhooks**.
+2. Click **Add Endpoint**.
+3. Enter your webhook URL (must be HTTPS).
+4. Select which events to subscribe to:
+   - `payment.created` -- A new payment has been initiated.
+   - `payment.completed` -- A payment was successfully settled.
+   - `payment.failed` -- A payment failed or expired.
+   - `payment.refunded` -- A refund was issued.
+5. Click **Save**.
+
+goBlink signs every webhook payload with HMAC-SHA256 using your webhook secret. Always verify the signature on your server to ensure the request is authentic. See the [API documentation](/developers/webhooks) for signature verification examples.
+
+### Webhook Payload Example
+
+```json
+{
+  "event": "payment.completed",
+  "timestamp": "2026-03-01T14:30:00Z",
+  "data": {
+    "payment_id": "gb_pay_abc123",
+    "amount": "150.00",
+    "currency": "USD",
+    "settlement_amount": "150.00",
+    "settlement_token": "USDC",
+    "settlement_chain": "arbitrum",
+    "settlement_tx_hash": "0xdef456...",
+    "payer_address": "0x9876...fedc",
+    "payer_chain": "ethereum",
+    "payer_token": "ETH",
+    "payer_amount": "0.0385",
+    "status": "completed",
+    "metadata": {
+      "order_id": "ORD-2026-001"
+    }
+  }
+}
+```
+
+## Step 6: Test Your Integration
+
+Before processing real payments, use Test Mode to verify everything works. See the [Test Mode](/users/merchant/test-mode) guide for details. In short:
+
+1. Switch to Test Mode in the dashboard (toggle in the top nav bar).
+2. Use your `gb_test_` API keys.
+3. Create a test payment and pay it using testnet tokens.
+4. Verify that your webhook endpoint receives the correct notifications.
+5. Check that the transaction appears correctly in the dashboard.
+
+## Volume Tiers and Verification
+
+goBlink offers three merchant tiers based on monthly payment volume:
+
+| Tier | Monthly Volume | Verification Required | Per-Transaction Limit | Platform Fee |
+|---|---|---|---|---|
+| Starter | Up to $10,000 | Email only | $2,000 | 1.0% |
+| Growth | $10,001 -- $100,000 | Email + ID verification | $25,000 | 0.75% |
+| Business | $100,001+ | Full KYB (Know Your Business) | $500,000 | Custom (contact sales) |
+
+You start on the Starter tier automatically. To upgrade, go to **Settings > Account > Upgrade Tier** and complete the required verification.
+
+## What Comes Next
+
+After completing onboarding, explore these topics:
+
+- [Dashboard Tour](/users/merchant/dashboard-tour) -- Learn your way around the merchant dashboard.
+- [Settlement](/users/merchant/settlement) -- Understand when and how you receive funds.
+- [Test Mode](/users/merchant/test-mode) -- Safely test your integration.
+- [Invoices & POS](/users/merchant/invoices-pos) -- Generate invoices and accept in-person payments.
+- [Troubleshooting](/users/merchant/troubleshooting) -- Solve common integration issues.

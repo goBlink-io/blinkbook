@@ -1,0 +1,165 @@
+---
+title: Dashboard Tour
+description: A guided walkthrough of the goBlink merchant dashboard, covering every tab, metric, and feature available to you.
+---
+
+## Overview
+
+The goBlink merchant dashboard at [merchant.goblink.io](https://merchant.goblink.io) is your central hub for managing payments, monitoring transactions, configuring settings, and analyzing your payment data. This guide walks through every section of the dashboard so you know where to find what you need.
+
+## Top Navigation Bar
+
+The top nav bar is always visible and contains:
+
+- **Business name and logo** -- Clicking this takes you back to the Overview tab.
+- **Mode toggle** -- A switch between **Live** and **Test** modes. When in Test Mode, the entire dashboard has an orange border and a "TEST MODE" badge to prevent confusion. See [Test Mode](/users/merchant/test-mode) for details.
+- **Notifications bell** -- Shows recent events: successful payments, failed payments, webhook delivery failures, and system announcements.
+- **Account menu** -- Access your profile, account settings, team management, and logout.
+
+## Overview Tab
+
+The Overview tab is the first thing you see after logging in. It provides a high-level snapshot of your payment activity.
+
+### Key Metrics
+
+The top of the page displays four metric cards:
+
+| Metric | Description |
+|---|---|
+| Total Volume (30d) | The total USD-equivalent value of all completed payments in the last 30 days. |
+| Successful Payments (30d) | The number of payments that completed successfully in the last 30 days. |
+| Success Rate (30d) | The percentage of initiated payments that completed. A healthy rate is above 95%. |
+| Average Payment | The average USD-equivalent value of completed payments over the last 30 days. |
+
+### Volume Chart
+
+Below the metrics is a line chart showing daily payment volume over the selected time range (7 days, 30 days, 90 days, or custom). You can toggle between volume (USD) and payment count views. Hover over any data point to see the exact value for that day.
+
+### Recent Transactions
+
+A table showing the 10 most recent transactions with columns for payment ID, amount, payer chain, status, and timestamp. Click any row to open the full transaction detail view.
+
+## Transactions Tab
+
+The Transactions tab gives you a comprehensive, filterable list of every payment processed through your merchant account.
+
+### Filters
+
+You can filter the transaction list by:
+
+- **Status** -- Pending, Completed, Failed, Refunded
+- **Date range** -- Custom start and end dates
+- **Chain** -- Source chain the payer used
+- **Token** -- Source token the payer sent
+- **Amount range** -- Minimum and maximum payment amount
+- **Search** -- Free-text search by payment ID, payer address, or metadata values
+
+### Transaction Detail View
+
+Click any transaction row to open a detailed side panel showing:
+
+- **Payment ID** -- The unique identifier (e.g., `gb_pay_abc123`).
+- **Status timeline** -- A visual timeline showing when the payment was created, confirmed, executed, and completed (or failed).
+- **Payer details** -- The payer's wallet address, source chain, source token, and amount sent.
+- **Settlement details** -- Your settlement token, chain, amount received, and the destination transaction hash (linked to the block explorer).
+- **Exchange rate** -- The rate applied for the cross-chain conversion.
+- **Fees** -- Platform fee amount and percentage.
+- **Metadata** -- Any custom key-value pairs attached to the payment (e.g., order ID, customer email).
+- **Webhook deliveries** -- A log of webhook attempts for this payment, including HTTP status codes and response times.
+
+### CSV Export
+
+Click the **Export CSV** button to download a CSV file of all transactions matching your current filters. The export includes all columns from the detail view, making it suitable for accounting software import or tax reporting. Exports are limited to 50,000 rows per file -- use date range filters to split larger datasets.
+
+## Payment Links Tab
+
+This tab manages all your payment links. See [Payment Links](/users/payment-links) for a detailed guide.
+
+The tab shows a table of all created links with columns for:
+
+- Link ID and short URL
+- Amount and currency
+- Status (Active, Paid, Expired, Disabled)
+- Created date
+- Number of payments received (for reusable links)
+
+You can create new links, disable existing ones, copy URLs, and download QR codes from this tab.
+
+## Invoices Tab
+
+Manage invoices you have created and sent. See [Invoices & POS](/users/merchant/invoices-pos) for details.
+
+Each invoice row shows the invoice number, client name or email, amount, due date, and payment status. You can filter by status (Draft, Sent, Paid, Overdue, Void) and export invoice data.
+
+## Settings Tab
+
+The Settings tab contains all your merchant account configuration, organized into sub-sections.
+
+### General
+
+- Business name, URL, logo, and support email
+- Industry and country
+- Timezone (used for dashboard charts and CSV timestamps)
+
+### Settlement
+
+- Settlement chain, token, and wallet address
+- Wallet verification status
+- Settlement history log
+
+### API Keys
+
+- View your publishable keys (the full key is visible)
+- Rotate or delete keys
+- See when each key was last used
+- Generate new live or test keys
+
+Secret keys are shown only once at creation. If you need to see a secret key again, you must rotate it (which invalidates the old key and creates a new one).
+
+### Webhooks
+
+- List of configured webhook endpoints
+- Event subscriptions for each endpoint
+- Delivery logs with HTTP status codes and retry counts
+- Webhook secret (for HMAC-SHA256 signature verification)
+- Test button to send a sample webhook payload
+
+### Team
+
+- Invite team members by email
+- Assign roles: Owner, Admin, Viewer
+- Remove team members
+
+| Role | View Dashboard | Manage Payments | Manage Settings | Manage API Keys | Manage Team |
+|---|---|---|---|---|---|
+| Owner | Yes | Yes | Yes | Yes | Yes |
+| Admin | Yes | Yes | Yes | No | No |
+| Viewer | Yes | No | No | No | No |
+
+### Branding
+
+- Customize the appearance of your checkout pages and payment links
+- Upload a logo and set primary/accent colors
+- Preview how your branded checkout page looks
+- Add a custom "Powered by" line or hide goBlink branding (Business tier only)
+
+### Notifications
+
+- Configure email notifications for: successful payments, failed payments, refunds, daily summary reports, and security alerts
+- Set recipients (you can add multiple email addresses)
+- Enable or disable each notification type independently
+
+## Keyboard Shortcuts
+
+The dashboard supports keyboard shortcuts for power users:
+
+| Shortcut | Action |
+|---|---|
+| `G` then `O` | Go to Overview |
+| `G` then `T` | Go to Transactions |
+| `G` then `L` | Go to Payment Links |
+| `G` then `I` | Go to Invoices |
+| `G` then `S` | Go to Settings |
+| `/` | Focus the search bar |
+| `?` | Show keyboard shortcut help |
+| `Esc` | Close any open panel or modal |

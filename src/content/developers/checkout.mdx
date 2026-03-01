@@ -1,0 +1,200 @@
+---
+title: Checkout
+description: Customize the goBlink hosted checkout experience with your brand colors, logo, and redirect behavior.
+---
+
+## Overview
+
+Every payment and invoice created through the goBlink API generates a hosted checkout page at `checkout.goblink.io`. This page handles the entire payment flow -- chain selection, wallet connection, transaction signing, and confirmation -- so you do not need to build any payment UI.
+
+The checkout page is fully customizable. You can match it to your brand with custom colors, logos, and domain settings.
+
+## Checkout Flow
+
+When a customer visits a checkout URL, they go through the following steps:
+
+1. **Amount display** -- The checkout page shows the payment amount in the merchant's settlement currency (e.g., USD).
+2. **Chain selection** -- The customer picks their preferred blockchain (Ethereum, Polygon, Base, Solana, etc.).
+3. **Token selection** -- The customer selects which token to pay with (ETH, USDC, USDT, etc.).
+4. **Wallet connection** -- The customer connects their wallet (MetaMask, WalletConnect, Phantom, Coinbase Wallet, etc.).
+5. **Price quote** -- goBlink calculates the exact token amount based on real-time exchange rates. The quote is locked for 60 seconds.
+6. **Transaction approval** -- The customer reviews the transaction details and confirms in their wallet.
+7. **Confirmation** -- goBlink monitors the blockchain for confirmations and displays a real-time progress indicator.
+8. **Redirect** -- After successful payment, the customer is redirected to the `redirect_url` specified when the payment was created.
+
+## Branding Customization
+
+### Dashboard Configuration
+
+To customize your checkout page branding:
+
+1. Go to the [goBlink Dashboard](https://merchant.goblink.io/dashboard).
+2. Navigate to **Settings > Checkout**.
+3. Configure the following options:
+
+| Setting | Description |
+|---------|-------------|
+| **Merchant Name** | Displayed at the top of the checkout page. |
+| **Logo** | Your logo image. Recommended: 200x200px PNG or SVG with transparent background. Max 2 MB. |
+| **Primary Color** | Main accent color for buttons, links, and highlights. Hex format (e.g., `#6366F1`). |
+| **Background Color** | Page background color. Hex format. |
+| **Border Radius** | Corner radius for buttons and cards: `none`, `small`, `medium`, `large`. |
+
+### API Configuration
+
+You can also set branding options per payment using the `checkout_options` parameter:
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/payments \
+  -H "Authorization: Bearer gb_test_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "49.99",
+    "currency": "USD",
+    "description": "Premium plan",
+    "redirect_url": "https://app.example.com/success",
+    "cancel_url": "https://app.example.com/cancel",
+    "checkout_options": {
+      "primary_color": "#6366F1",
+      "background_color": "#0F172A",
+      "border_radius": "large",
+      "show_merchant_name": true,
+      "show_description": true
+    }
+  }'
+```
+
+### Checkout Options Reference
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `primary_color` | string | `#3B82F6` | Hex color for buttons and accents. |
+| `background_color` | string | `#FFFFFF` | Hex color for the page background. |
+| `border_radius` | string | `medium` | Corner radius: `none`, `small`, `medium`, `large`. |
+| `show_merchant_name` | boolean | `true` | Whether to display your merchant name. |
+| `show_description` | boolean | `true` | Whether to display the payment description. |
+| `show_amount_in_token` | boolean | `true` | Show the equivalent token amount alongside the fiat amount. |
+| `locale` | string | `en` | Checkout page language: `en`, `es`, `fr`, `de`, `ja`, `ko`, `zh`. |
+
+## Custom Domain
+
+You can serve the checkout page from your own subdomain (e.g., `pay.yourstore.com`) instead of `checkout.goblink.io`.
+
+### Setup Steps
+
+1. Go to **Settings > Checkout > Custom Domain** in the dashboard.
+2. Enter your desired subdomain (e.g., `pay.yourstore.com`).
+3. Add the CNAME record shown to your DNS provider:
+
+```
+CNAME pay.yourstore.com -> checkout.goblink.io
+```
+
+4. Click **Verify Domain**. DNS propagation may take up to 24 hours.
+5. Once verified, goBlink automatically provisions an SSL certificate for your subdomain.
+
+After setup, checkout URLs will use your custom domain:
+
+```
+https://pay.yourstore.com/pay_a1b2c3d4e5f6g7h8
+```
+
+## Redirect Behavior
+
+### Success Redirect
+
+After a successful payment, the customer is redirected to your `redirect_url` with query parameters appended:
+
+```
+https://app.example.com/success?payment_id=pay_a1b2c3d4e5f6g7h8&status=completed
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `payment_id` | The goBlink payment ID. |
+| `status` | The payment status (`completed`). |
+
+### Cancel Redirect
+
+If the customer clicks the back or cancel button on the checkout page, they are redirected to the `cancel_url`:
+
+```
+https://app.example.com/cancel?payment_id=pay_a1b2c3d4e5f6g7h8&status=cancelled
+```
+
+### Handling Redirects
+
+Always verify the payment status server-side after a redirect. Do not rely solely on the redirect query parameters, as they could be spoofed:
+
+```javascript
+app.get("/success", async (req, res) => {
+  const { payment_id } = req.query;
+
+  // Always verify server-side
+  const response = await fetch(
+    `https://merchant.goblink.io/api/v1/payments/${payment_id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.GOBLINK_API_KEY}`,
+      },
+    }
+  );
+
+  const { data } = await response.json();
+
+  if (data.status === "completed") {
+    // Fulfill the order
+    res.render("success", { payment: data });
+  } else {
+    // Payment not yet confirmed -- show a pending state
+    res.render("pending", { payment: data });
+  }
+});
+```
+
+## Expiration
+
+Checkout pages expire based on the `expiration_minutes` parameter set when the payment was created (default: 30 minutes). After expiration:
+
+- The checkout page displays an "Expired" message.
+- The payment status transitions to `expired`.
+- A `payment.expired` webhook event is sent.
+- The customer sees a link to contact the merchant or retry.
+
+## Supported Wallets
+
+The checkout page supports the following wallet connections:
+
+| Wallet | Chains | Connection Method |
+|--------|--------|-------------------|
+| MetaMask | EVM chains | Browser extension, mobile deeplink |
+| WalletConnect | EVM chains | QR code scan, mobile deeplink |
+| Coinbase Wallet | EVM chains | Browser extension, mobile app |
+| Phantom | Solana, EVM chains | Browser extension |
+| Rainbow | EVM chains | WalletConnect |
+| Trust Wallet | EVM chains, BNB | Mobile deeplink |
+
+## Checkout Page Screenshots
+
+The checkout page adapts to your branding. Below are the key screens in the flow:
+
+### Default Theme
+
+The default checkout page uses a clean white background with blue accent colors. The merchant name and payment description are displayed prominently, followed by chain and token selectors.
+
+### Dark Theme Example
+
+Setting `background_color` to `#0F172A` and `primary_color` to `#6366F1` produces a dark checkout page suitable for web3-native applications.
+
+## Embedding the Checkout
+
+Instead of redirecting customers to the checkout URL, you can embed it in a modal or iframe on your site. See the [Embeddable Button](/developers/embeddable-button) documentation for details on inline checkout integration.
+
+## Testing Checkout
+
+In test mode (using a `gb_test_` API key), the checkout page shows a simulated payment flow:
+
+- Wallet connection is skipped.
+- A **Simulate Payment** button appears.
+- Clicking the button immediately processes the payment.
+- You can test success, failure, and expiration scenarios by using the [test amounts](/developers/payments-api#test-mode-amounts).

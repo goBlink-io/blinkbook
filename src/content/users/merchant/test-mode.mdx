@@ -1,0 +1,170 @@
+---
+title: Test Mode
+description: Use goBlink's Test Mode to validate your integration with testnet tokens before processing real payments.
+---
+
+## What Is Test Mode?
+
+Test Mode lets you simulate the entire goBlink payment flow -- creating payments, processing checkout, receiving webhooks, and viewing transactions -- without moving real funds. All transactions in Test Mode happen on blockchain testnets, using free testnet tokens.
+
+Test Mode is essential for:
+
+- Verifying your API integration works correctly before launch
+- Testing webhook handling and signature verification
+- Training your team on the merchant dashboard
+- Debugging issues in a safe environment
+
+## Switching to Test Mode
+
+### In the Dashboard
+
+Click the **Live / Test** toggle in the top navigation bar of the merchant dashboard. When Test Mode is active:
+
+- The entire dashboard has an **orange border** and a "TEST MODE" badge in the top nav.
+- All data you see (transactions, payment links, invoices) is test data only. Your live data is hidden and unaffected.
+- Any payment links or invoices you create are test-only and will not accept real funds.
+
+### In the API
+
+Use your `gb_test_` prefixed API keys instead of `gb_live_` keys. The API endpoints are the same -- goBlink determines the mode based on the key prefix.
+
+```
+# Live mode
+Authorization: Bearer gb_live_sk_abc123...
+
+# Test mode
+Authorization: Bearer gb_test_sk_xyz789...
+```
+
+Any request made with a test key operates in Test Mode. Mixing live and test keys in the same workflow is not possible -- a payment created with a test key can only be interacted with using test keys.
+
+## Test Chains and Tokens
+
+In Test Mode, goBlink maps each supported chain to its testnet equivalent:
+
+| Mainnet Chain | Testnet | Faucet |
+|---|---|---|
+| Ethereum | Sepolia | [sepoliafaucet.com](https://sepoliafaucet.com) |
+| Polygon | Amoy | [faucet.polygon.technology](https://faucet.polygon.technology) |
+| BSC | BSC Testnet | [testnet.bnbchain.org/faucet-smart](https://testnet.bnbchain.org/faucet-smart) |
+| Arbitrum | Arbitrum Sepolia | [faucet.arbitrum.io](https://faucet.arbitrum.io) |
+| Optimism | Optimism Sepolia | [faucet.optimism.io](https://faucet.optimism.io) |
+| Base | Base Sepolia | [faucet.base.org](https://faucet.base.org) |
+| Avalanche | Fuji | [faucet.avax.network](https://faucet.avax.network) |
+| NEAR | NEAR Testnet | [wallet.testnet.near.org](https://wallet.testnet.near.org) |
+| Solana | Devnet | [solfaucet.com](https://solfaucet.com) |
+| Fantom | Fantom Testnet | [faucet.fantom.network](https://faucet.fantom.network) |
+| zkSync | zkSync Sepolia | [faucet.zksync.io](https://faucet.zksync.io) |
+| Linea | Linea Sepolia | [faucet.linea.build](https://faucet.linea.build) |
+
+### Getting Testnet Tokens
+
+To simulate payments, you need testnet tokens. Use the faucet links above to get free testnet native tokens, then swap them for test USDC or other tokens on a testnet DEX. Alternatively, goBlink provides a built-in faucet for Test Mode:
+
+1. In Test Mode, go to **Settings > Test Tools**.
+2. Click **Get Test Tokens**.
+3. Select a chain and token (e.g., USDC on Arbitrum Sepolia).
+4. Enter your testnet wallet address.
+5. goBlink sends you 1,000 test tokens. You can request tokens up to 5 times per day.
+
+## Creating a Test Payment
+
+### From the Dashboard
+
+1. Make sure Test Mode is active (orange border visible).
+2. Go to the **Payment Links** tab and click **Create Payment Link**.
+3. Configure the link as you would for a live payment.
+4. Open the generated link in a new browser tab.
+5. Connect a wallet configured for the appropriate testnet.
+6. Complete the payment using testnet tokens.
+7. Return to the dashboard and verify the payment appears in **Transactions** with a "Completed" status.
+
+### From the API
+
+Create a test payment using your `gb_test_` secret key:
+
+```
+POST /v1/payments
+Authorization: Bearer gb_test_sk_xyz789...
+
+{
+  "amount": "25.00",
+  "currency": "USD",
+  "metadata": {
+    "order_id": "TEST-001",
+    "customer_email": "test@example.com"
+  }
+}
+```
+
+The response includes a `checkout_url` that you or your test customer can visit to complete the payment with testnet tokens.
+
+## Testing Webhooks
+
+Test Mode sends webhooks to the same endpoints you configure for live mode. The webhook payloads are identical in structure but contain test payment IDs (still prefixed with `gb_pay_`, but only visible in Test Mode data).
+
+### Tips for Webhook Testing
+
+- **Use a webhook inspection tool** like [webhook.site](https://webhook.site) or ngrok to expose your local development server to the internet. This lets you test webhook delivery without deploying to production.
+- **Verify signatures in test mode.** Test webhooks are signed with your test webhook secret (different from your live webhook secret). Make sure your signature verification code uses the correct secret for each mode.
+- **Trigger different event types.** Test Mode supports all the same events as live mode: `payment.created`, `payment.completed`, `payment.failed`, and `payment.refunded`.
+- **Simulate failures.** Use the special test amount `$0.01` to trigger a simulated payment failure. The payment will go through the normal flow but fail at the solver stage, generating a `payment.failed` event.
+
+## Test Mode vs. Live Mode Comparison
+
+| Feature | Test Mode | Live Mode |
+|---|---|---|
+| API key prefix | `gb_test_` | `gb_live_` |
+| Blockchain networks | Testnets | Mainnets |
+| Real funds moved | No | Yes |
+| Webhooks fired | Yes | Yes |
+| Dashboard data | Separate test dataset | Separate live dataset |
+| Payment links | Testnet-only checkout | Real checkout |
+| Invoices | Test invoices (not emailed) | Real invoices (emailed to client) |
+| CSV export | Test transactions only | Live transactions only |
+| Settlement | Testnet tokens to your testnet wallet | Real tokens to your mainnet wallet |
+| Refunds | Simulated | Real |
+| Rate limits | Same as live | Same as test |
+
+## Common Test Scenarios
+
+Here is a checklist of scenarios to test before going live:
+
+### Payment Flow
+
+- [ ] Create a payment via API and complete it through the checkout page.
+- [ ] Create a payment link and complete a payment through it.
+- [ ] Verify the payment appears in the Transactions tab with correct details.
+- [ ] Verify the settlement amount matches expectations after fee deduction.
+
+### Webhook Handling
+
+- [ ] Receive a `payment.created` webhook and verify the signature.
+- [ ] Receive a `payment.completed` webhook and update your order status.
+- [ ] Receive a `payment.failed` webhook (use the $0.01 test amount) and handle the failure gracefully.
+- [ ] Test webhook retry behavior by temporarily returning a 500 error from your endpoint.
+
+### Refunds
+
+- [ ] Issue a full refund for a completed test payment.
+- [ ] Issue a partial refund for a completed test payment.
+- [ ] Verify the `payment.refunded` webhook is received.
+
+### Edge Cases
+
+- [ ] Attempt a payment with insufficient testnet balance and verify the error message.
+- [ ] Let a payment expire without completing it and verify it transitions to "failed."
+- [ ] Change your settlement wallet in test mode and verify new payments settle to the new address.
+
+## Going Live
+
+When you have completed your testing and are ready to accept real payments:
+
+1. Switch the dashboard toggle from **Test** to **Live**.
+2. Replace all `gb_test_` API keys in your application with `gb_live_` keys.
+3. Verify your live settlement wallet is configured and verified.
+4. Make sure your webhook endpoint is deployed to a production server with a valid HTTPS certificate.
+5. Process a small real payment ($1 -- $5) as a final end-to-end verification.
+6. Monitor the first few live payments closely in the dashboard to confirm everything works as expected.
+
+Your test data remains accessible in Test Mode and does not interfere with your live data.

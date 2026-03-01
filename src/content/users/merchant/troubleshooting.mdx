@@ -1,0 +1,186 @@
+---
+title: Troubleshooting
+description: Solutions for common issues encountered when integrating and using goBlink merchant payments.
+---
+
+## Payment Issues
+
+### Payment Stuck on "Confirming"
+
+**Symptom:** A customer completed the payment, but the status has been "confirming" for longer than expected.
+
+**Cause:** The source chain may be congested, causing slower block confirmations than usual. This is most common on Ethereum during high-traffic periods.
+
+**Solution:**
+- Check the source chain's block explorer using the transaction hash from the payment detail view. If the transaction is pending in the mempool, it will confirm once congestion clears.
+- goBlink automatically monitors and waits for confirmation. No action is needed from you.
+- If the transaction has been pending for more than 30 minutes on Ethereum (or more than 10 minutes on other chains), contact goBlink support with the payment ID.
+
+### Payment Failed After Customer Paid
+
+**Symptom:** The customer's tokens were deducted, but the payment status shows "failed."
+
+**Cause:** The cross-chain swap could not be fulfilled by any solver before the intent expired. This is rare but can happen with low-liquidity tokens or during extreme market volatility.
+
+**Solution:**
+- The customer's tokens are automatically refunded to their wallet on the source chain. Refund transactions typically complete within 5 minutes of the failure.
+- Check the payment detail view for the refund transaction hash.
+- Ask the customer to retry the payment. If the issue persists, suggest they pay with a more liquid token (e.g., USDC or ETH).
+- If the refund does not appear within 15 minutes, contact goBlink support.
+
+### Customer Says They Paid but No Payment Appears
+
+**Symptom:** A customer claims they completed a payment, but no corresponding transaction appears in your dashboard.
+
+**Solution:**
+1. Ask the customer for the transaction hash from their wallet.
+2. Look up the transaction on the relevant block explorer to verify it was broadcast and confirmed.
+3. Check if the customer used the correct payment link or checkout URL. Payments made directly to your settlement wallet (bypassing goBlink) will not appear in the dashboard.
+4. Verify you are looking at the correct mode (Live vs. Test). A common mistake is the customer paying through a test payment link with real tokens, or vice versa.
+5. If the transaction is confirmed on-chain but not in the dashboard, contact goBlink support with the transaction hash.
+
+### Payment Amount Mismatch
+
+**Symptom:** The settlement amount you received is different from what you expected.
+
+**Cause:** This is usually due to exchange rate fluctuations between quote time and execution time, or fee deductions.
+
+**Solution:**
+- Open the payment detail view and check the **exchange rate** and **platform fee** fields.
+- The settlement amount = customer amount x exchange rate - platform fee.
+- The exchange rate reflects the rate at which the solver fulfilled the swap, which may differ slightly from the quoted rate due to slippage (within the tolerance you configured, default 0.5%).
+- If the discrepancy is larger than the slippage tolerance, contact goBlink support with the payment ID.
+
+## Webhook Issues
+
+### Webhooks Not Being Received
+
+**Symptom:** Your webhook endpoint is configured, but you are not receiving webhook notifications.
+
+**Solution:**
+1. Go to **Settings > Webhooks** and verify the endpoint URL is correct and uses HTTPS.
+2. Check the **Delivery Logs** for the endpoint. If deliveries show HTTP errors (4xx or 5xx), your server is reachable but returning errors.
+3. Make sure your server is not blocking goBlink's IP addresses. Webhook requests come from goBlink's infrastructure and include a `User-Agent: goBlink-Webhooks/1.0` header.
+4. Test the endpoint with the **Send Test Webhook** button in the webhook settings. This sends a sample payload and shows the response.
+5. If you are developing locally, make sure you are using a tunneling tool (ngrok, Cloudflare Tunnel) to expose your local server to the internet.
+
+### Webhook Signature Verification Failing
+
+**Symptom:** You receive webhook payloads but your signature verification code rejects them as invalid.
+
+**Cause:** The most common causes are:
+
+- Using the wrong webhook secret (e.g., live secret for test webhooks or vice versa).
+- Not computing the HMAC over the raw request body. If your framework parses the body as JSON before you compute the signature, the serialized form may differ from the original payload.
+- Using the wrong hashing algorithm. goBlink uses HMAC-SHA256.
+
+**Solution:**
+1. Verify you are using the correct webhook secret for the current mode (live or test). Each mode has its own secret, visible in **Settings > Webhooks**.
+2. Compute the HMAC-SHA256 over the **raw request body** as a byte string, not a parsed-and-reserialized JSON object.
+3. The signature is sent in the `X-GoBlink-Signature` header. Compare your computed signature against this value using a constant-time comparison function to prevent timing attacks.
+
+Example verification in pseudocode:
+
+```
+raw_body = request.get_raw_body()
+expected_signature = hmac_sha256(webhook_secret, raw_body)
+actual_signature = request.headers["X-GoBlink-Signature"]
+
+if not constant_time_equal(expected_signature, actual_signature):
+    return 401 Unauthorized
+```
+
+### Duplicate Webhook Deliveries
+
+**Symptom:** Your endpoint receives the same webhook event multiple times.
+
+**Cause:** goBlink retries webhook delivery if your endpoint does not respond with a 2xx status code within 10 seconds. If your server is slow to respond or returns an error, retries are triggered.
+
+**Solution:**
+- Make your webhook handler **idempotent**. Use the `payment_id` field to check if you have already processed the event before taking action.
+- Return a 200 response as quickly as possible. Do heavy processing (database writes, emails, fulfillment) asynchronously after acknowledging the webhook.
+- goBlink's retry schedule is: immediate, 1 minute, 5 minutes, 30 minutes, 2 hours, 12 hours. After all retries are exhausted, the delivery is marked as failed.
+
+## API Issues
+
+### "Invalid API Key" Error
+
+**Symptom:** API requests return a 401 error with the message "Invalid API key."
+
+**Solution:**
+1. Verify you are using the correct key for the environment. Live endpoints require `gb_live_` keys; test endpoints require `gb_test_` keys. (The endpoints are the same URL -- the mode is determined by the key prefix.)
+2. Check that you are sending the key in the `Authorization` header as a Bearer token: `Authorization: Bearer gb_live_sk_...`
+3. Verify the key has not been rotated. If someone on your team rotated the key, the old key is immediately invalidated.
+4. Make sure you are using the **secret key**, not the publishable key, for server-side API calls that read data or issue refunds.
+
+### Rate Limiting
+
+**Symptom:** API requests return a 429 status code with the message "Rate limit exceeded."
+
+**Cause:** goBlink enforces rate limits to protect the platform from abuse.
+
+**Current rate limits:**
+
+| Endpoint Category | Limit |
+|---|---|
+| Payment creation | 100 requests per minute |
+| Payment status queries | 300 requests per minute |
+| Payment link management | 50 requests per minute |
+| Webhook management | 20 requests per minute |
+| All other endpoints | 200 requests per minute |
+
+**Solution:**
+- Implement exponential backoff in your API client. Wait and retry with increasing delays.
+- Use webhooks instead of polling for payment status updates. This dramatically reduces the number of API calls.
+- If you consistently hit rate limits due to legitimate traffic, contact goBlink support to request a limit increase.
+
+## Dashboard Issues
+
+### Dashboard Shows No Data
+
+**Symptom:** The dashboard overview, transactions, or payment links tabs are empty.
+
+**Solution:**
+1. Check the **mode toggle** in the top nav. You might be viewing Test Mode while your data is in Live Mode (or vice versa).
+2. Check the **date range filter**. If a custom date range is set, it may exclude your data.
+3. Clear your browser cache and reload the page.
+4. If the issue persists, try a different browser or incognito mode to rule out browser extension conflicts.
+
+### Settlement Wallet Shows "Unverified"
+
+**Symptom:** Your settlement wallet status shows "Unverified" even though you completed the verification process.
+
+**Solution:**
+1. If you verified via wallet signing, make sure the signature transaction was confirmed on-chain. Check the block explorer for the verification chain.
+2. If you verified via micro-transaction, make sure you sent the exact amount from the exact wallet address you configured. The verification checks the sender address and amount precisely.
+3. Try re-verifying by going to **Settings > Settlement** and clicking **Re-verify**.
+4. If re-verification fails, contact goBlink support.
+
+## Common Error Codes
+
+| Error Code | HTTP Status | Meaning | Action |
+|---|---|---|---|
+| `invalid_api_key` | 401 | The API key is missing, malformed, or revoked. | Check your API key configuration. |
+| `insufficient_permissions` | 403 | The key type does not have permission for this action. | Use the secret key for server-side operations. |
+| `payment_not_found` | 404 | The payment ID does not exist or belongs to a different mode. | Verify the payment ID and mode. |
+| `rate_limit_exceeded` | 429 | Too many requests in the current window. | Implement backoff and reduce request frequency. |
+| `invalid_amount` | 400 | The payment amount is below the minimum or above the maximum. | Check transfer limits on the Supported Chains page. |
+| `unsupported_token` | 400 | The requested token is not supported on the specified chain. | Check the supported tokens list. |
+| `settlement_error` | 500 | An internal error occurred during settlement. | Retry the request. If persistent, contact support. |
+| `solver_unavailable` | 503 | No solver is available to fulfill the request. | Retry after a short delay. Consider using a more liquid token. |
+
+## Getting Help
+
+If you cannot resolve an issue using this guide:
+
+- **Email support:** support@goblink.io -- Response within 24 hours for all tiers, 4 hours for Business tier.
+- **Discord:** Join the goBlink Discord server for community support and direct access to the engineering team.
+- **Status page:** Check [status.goblink.io](https://status.goblink.io) for current platform status and incident reports.
+
+When contacting support, include:
+
+- Your merchant account email
+- The payment ID(s) involved (e.g., `gb_pay_abc123`)
+- The relevant transaction hashes
+- Screenshots of any error messages
+- Your API integration language and framework

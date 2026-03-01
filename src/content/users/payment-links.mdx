@@ -1,0 +1,134 @@
+---
+title: Payment Links
+description: Create shareable payment links that let anyone pay you in their preferred token on any supported chain through goBlink.
+---
+
+## What Are Payment Links?
+
+A goBlink payment link is a URL that opens a pre-configured payment page. When someone visits the link, they see a branded checkout screen where they can pay in any token on any supported chain. You, the recipient, receive the funds in your preferred settlement token and chain.
+
+Payment links are useful for:
+
+- **Freelancers and contractors** sending invoices to clients who hold various tokens on different chains.
+- **Content creators** accepting tips or donations from their audience.
+- **Small businesses** collecting one-off payments without integrating an API.
+- **Anyone** who wants to receive crypto without coordinating chain and token details with the sender.
+
+## Creating a Payment Link
+
+### From the goBlink App
+
+1. Navigate to the **Payment Links** tab in the goBlink app.
+2. Click **Create Payment Link**.
+3. Fill in the configuration form:
+
+| Field | Required | Description |
+|---|---|---|
+| Amount | Optional | A fixed amount the payer must send. Leave blank for open-amount links. |
+| Currency | Yes | The currency the amount is denominated in (e.g., USD, EUR, USDC). |
+| Settlement token | Yes | The token and chain you want to receive (e.g., USDC on Arbitrum). |
+| Description | Optional | A short note displayed on the payment page (e.g., "Logo design -- Project #42"). |
+| Recipient address | Yes | The wallet address where you want to receive funds. Defaults to your connected wallet. |
+| Expiration | Optional | A date and time after which the link becomes inactive. |
+| Redirect URL | Optional | A URL the payer is redirected to after a successful payment. |
+
+4. Click **Generate Link**. goBlink creates a unique URL like `https://pay.goblink.io/p/abc123xyz`.
+5. Copy and share the link however you like -- email, chat, social media, QR code, or embed it on a webpage.
+
+### From the API
+
+Merchants with API access can create payment links programmatically. See the API documentation for the `POST /v1/payment-links` endpoint. A typical request looks like:
+
+```
+POST /v1/payment-links
+Authorization: Bearer gb_live_abc123...
+
+{
+  "amount": "150.00",
+  "currency": "USD",
+  "settlement_token": "USDC",
+  "settlement_chain": "arbitrum",
+  "description": "Consulting session - March 2026",
+  "recipient_address": "0x1234...abcd",
+  "expires_at": "2026-03-15T23:59:59Z",
+  "redirect_url": "https://example.com/thank-you"
+}
+```
+
+The response includes the `payment_url` and a unique `link_id` for tracking.
+
+## What the Payer Sees
+
+When a payer opens a goBlink payment link, they see a checkout page with:
+
+- Your business name or wallet address as the recipient.
+- The payment amount and description (if set).
+- A wallet connection prompt. The payer connects their own wallet to pay.
+- A token and chain selector. The payer picks which token and chain they want to pay from. goBlink calculates the exact amount they need to send based on the current exchange rate.
+- A real-time quote showing the conversion and any fees.
+- A **Pay** button that triggers the cross-chain transfer.
+
+The entire experience is similar to a standard checkout flow. The payer does not need a goBlink account -- they just need a wallet with funds.
+
+## Fixed vs. Open-Amount Links
+
+### Fixed Amount
+
+When you set a specific amount (e.g., $150 USD), the payer must pay exactly that amount. They choose their source token, and goBlink calculates how much of that token is required to deliver $150 worth of your settlement token. This is ideal for invoices and purchases with a defined price.
+
+### Open Amount
+
+If you leave the amount blank, the payer can enter any amount they choose. This is useful for donations, tips, or flexible payment scenarios. You can optionally set minimum and maximum amounts to constrain the range.
+
+## Managing Payment Links
+
+The **Payment Links** tab in the goBlink dashboard shows all your created links with their status:
+
+| Status | Meaning |
+|---|---|
+| Active | The link is live and can accept payments. |
+| Paid | A payment was successfully made through the link. For fixed-amount links, the link becomes inactive after one payment. |
+| Expired | The link passed its expiration date without being paid. |
+| Disabled | You manually disabled the link. |
+
+### Disabling a Link
+
+You can disable any active link at any time. Click the three-dot menu next to the link and select **Disable**. Disabled links show a "This payment link is no longer active" message to anyone who visits them.
+
+### Reusable Links
+
+By default, fixed-amount links are single-use -- once paid, they deactivate. If you want a link that can accept multiple payments (for example, a recurring service fee), toggle the **Reusable** option when creating the link. Reusable links remain active after each payment and track all payments in a list.
+
+## Payment Link QR Codes
+
+Every payment link has an associated QR code that you can download as a PNG or SVG. This is useful for:
+
+- Printing on invoices or receipts
+- Displaying at a physical point of sale
+- Embedding in presentations or documents
+
+Access the QR code by clicking the QR icon next to any payment link in the dashboard.
+
+## Tracking Payments
+
+When a payment is made through one of your links, you receive:
+
+- A **webhook notification** (if configured) with the full payment details including transaction hashes, amounts, and payer address.
+- An entry in the **Transactions** tab of your dashboard.
+- An optional **email notification** if you have email alerts enabled.
+
+Each payment records:
+
+- The payer's wallet address and chain
+- The source token and amount they sent
+- The settlement token and amount you received
+- Transaction hashes on both chains
+- Timestamp and completion time
+
+## Best Practices
+
+- **Always set a description** so the payer knows what they are paying for. Vague or empty payment pages reduce trust and conversion.
+- **Use fixed amounts for invoices** to avoid confusion about how much the client should pay.
+- **Set an expiration** for time-sensitive payments. This prevents old links from being paid after the relevant transaction or service period has passed.
+- **Configure a redirect URL** if you want payers to land on a confirmation or thank-you page after payment. This is especially useful when embedding payment links in a checkout flow.
+- **Enable webhooks** to automate your workflow. Use webhook notifications to update your database, send confirmation emails, or trigger fulfillment processes when a payment is received.

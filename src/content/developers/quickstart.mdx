@@ -1,0 +1,226 @@
+---
+title: Quickstart
+description: Go from zero to accepting your first goBlink crypto payment in under ten minutes.
+---
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- A goBlink merchant account ([sign up here](https://merchant.goblink.io/signup))
+- A test API key (starts with `gb_test_`)
+- A tool for making HTTP requests (cURL, Postman, or any HTTP client)
+
+## Step 1: Get Your API Key
+
+Log in to the [goBlink Dashboard](https://merchant.goblink.io/dashboard) and navigate to **Settings > API Keys**. You will see two keys:
+
+- **Test Key** (`gb_test_xxxx...`) -- Use this for development. No real funds are involved.
+- **Live Key** (`gb_live_xxxx...`) -- Use this for production. Real transactions will be processed.
+
+Copy your **test key** for the steps below.
+
+## Step 2: Create Your First Payment
+
+Make a `POST` request to the Payments endpoint to create a payment:
+
+### cURL
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/payments \
+  -H "Authorization: Bearer gb_test_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "25.00",
+    "currency": "USD",
+    "description": "Test payment",
+    "metadata": {
+      "order_id": "order_12345"
+    },
+    "redirect_url": "https://yoursite.com/payment/success",
+    "cancel_url": "https://yoursite.com/payment/cancel"
+  }'
+```
+
+### Node.js
+
+```javascript
+const response = await fetch("https://merchant.goblink.io/api/v1/payments", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer gb_test_your_api_key_here",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    amount: "25.00",
+    currency: "USD",
+    description: "Test payment",
+    metadata: {
+      order_id: "order_12345",
+    },
+    redirect_url: "https://yoursite.com/payment/success",
+    cancel_url: "https://yoursite.com/payment/cancel",
+  }),
+});
+
+const result = await response.json();
+console.log(result);
+```
+
+### Python
+
+```python
+import requests
+
+response = requests.post(
+    "https://merchant.goblink.io/api/v1/payments",
+    headers={
+        "Authorization": "Bearer gb_test_your_api_key_here",
+        "Content-Type": "application/json",
+    },
+    json={
+        "amount": "25.00",
+        "currency": "USD",
+        "description": "Test payment",
+        "metadata": {
+            "order_id": "order_12345",
+        },
+        "redirect_url": "https://yoursite.com/payment/success",
+        "cancel_url": "https://yoursite.com/payment/cancel",
+    },
+)
+
+result = response.json()
+print(result)
+```
+
+## Step 3: Inspect the Response
+
+A successful request returns a `201 Created` response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": "pay_9f8a7b6c5d4e3f2a",
+    "status": "pending",
+    "amount": "25.00",
+    "currency": "USD",
+    "description": "Test payment",
+    "checkout_url": "https://checkout.goblink.io/pay_9f8a7b6c5d4e3f2a",
+    "metadata": {
+      "order_id": "order_12345"
+    },
+    "redirect_url": "https://yoursite.com/payment/success",
+    "cancel_url": "https://yoursite.com/payment/cancel",
+    "expires_at": "2026-03-01T13:30:00Z",
+    "created_at": "2026-03-01T13:00:00Z"
+  }
+}
+```
+
+Key fields in the response:
+
+| Field | Description |
+|-------|-------------|
+| `payment_id` | Unique identifier for this payment. Use it to query status later. |
+| `status` | Current payment status. Starts as `pending`. |
+| `checkout_url` | URL to the hosted checkout page. Redirect your customer here. |
+| `expires_at` | Timestamp when the payment expires if not completed (default: 30 minutes). |
+
+## Step 4: Complete the Payment
+
+Open the `checkout_url` in your browser. In test mode, you will see a simulated checkout experience:
+
+1. The checkout page displays the amount and available payment methods.
+2. Select any chain and token (e.g., USDC on Ethereum).
+3. Click **Pay** to simulate the transaction.
+4. The payment status changes to `processing`, then to `completed` within a few seconds.
+
+After completion, you are redirected to the `redirect_url` you specified.
+
+## Step 5: Verify the Payment
+
+Query the payment status using the `payment_id`:
+
+```bash
+curl https://merchant.goblink.io/api/v1/payments/pay_9f8a7b6c5d4e3f2a \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": "pay_9f8a7b6c5d4e3f2a",
+    "status": "completed",
+    "amount": "25.00",
+    "currency": "USD",
+    "chain": "ethereum",
+    "token": "USDC",
+    "tx_hash": "0xabc123...def456",
+    "payer_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
+    "completed_at": "2026-03-01T13:02:34Z",
+    "created_at": "2026-03-01T13:00:00Z"
+  }
+}
+```
+
+## Step 6: Set Up a Webhook (Recommended)
+
+Polling for payment status works but is not recommended for production. Instead, register a webhook endpoint to receive real-time notifications.
+
+In the goBlink Dashboard, go to **Settings > Webhooks** and add your endpoint URL. Then handle the incoming event in your server:
+
+```javascript
+import express from "express";
+import crypto from "crypto";
+
+const app = express();
+app.use(express.json());
+
+app.post("/webhooks/goblink", (req, res) => {
+  const signature = req.headers["x-goblink-signature"];
+  const payload = JSON.stringify(req.body);
+  const secret = process.env.GOBLINK_WEBHOOK_SECRET;
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(payload)
+    .digest("hex");
+
+  if (signature !== expected) {
+    return res.status(401).send("Invalid signature");
+  }
+
+  const event = req.body;
+
+  switch (event.type) {
+    case "payment.completed":
+      console.log("Payment completed:", event.data.payment_id);
+      // Fulfill the order
+      break;
+    case "payment.failed":
+      console.log("Payment failed:", event.data.payment_id);
+      // Notify the customer
+      break;
+  }
+
+  res.status(200).send("OK");
+});
+
+app.listen(3000);
+```
+
+## Next Steps
+
+Now that you have created your first payment, explore the rest of the API:
+
+- [Authentication](/developers/authentication) -- Learn about API key management and security best practices.
+- [Payments API](/developers/payments-api) -- Full reference for creating, retrieving, and managing payments.
+- [Webhooks](/developers/webhooks) -- Detailed guide on webhook events and signature verification.
+- [Invoices API](/developers/invoices-api) -- Create and manage invoices for recurring or delayed payments.
+- [Checkout](/developers/checkout) -- Customize the hosted checkout experience with your brand.
+- [SDK Reference](/developers/sdk) -- Use the official Node.js or Python SDK for a smoother integration.

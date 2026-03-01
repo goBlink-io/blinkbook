@@ -1,0 +1,397 @@
+---
+title: Webhooks
+description: Receive real-time event notifications from goBlink using webhooks with HMAC-SHA256 signature verification.
+---
+
+## Overview
+
+Webhooks allow goBlink to push real-time notifications to your server when events occur -- such as a payment completing, an invoice being paid, or a refund finishing. Instead of polling the API for status changes, your server receives an HTTP POST request with the event payload as soon as the event happens.
+
+## Setting Up Webhooks
+
+### Dashboard Configuration
+
+1. Log in to the [goBlink Dashboard](https://merchant.goblink.io/dashboard).
+2. Navigate to **Settings > Webhooks**.
+3. Click **Add Endpoint**.
+4. Enter your endpoint URL (must be HTTPS in production).
+5. Select the events you want to receive.
+6. Click **Create**.
+
+After creating the endpoint, you will receive a **webhook signing secret** (starts with `whsec_`). Store this securely -- you will need it to verify incoming webhook signatures.
+
+### Endpoint Requirements
+
+Your webhook endpoint must:
+
+- Accept `POST` requests with a JSON body.
+- Respond with a `2xx` status code within **10 seconds**.
+- Be publicly accessible (no authentication required on the endpoint itself -- use signature verification instead).
+- Use HTTPS in production (HTTP is allowed for test mode only).
+
+## Event Types
+
+goBlink sends the following webhook events:
+
+| Event | Description | Trigger |
+|-------|-------------|---------|
+| `payment.completed` | A payment has been confirmed on-chain. | Customer's transaction received enough block confirmations. |
+| `payment.failed` | A payment transaction failed. | On-chain transaction reverted or was rejected. |
+| `payment.expired` | A payment expired before the customer paid. | `expires_at` deadline passed with no transaction. |
+| `payment.processing` | An on-chain transaction was detected for a payment. | Transaction detected in mempool or with 0 confirmations. |
+| `invoice.paid` | An invoice has been fully paid. | Customer completed payment for the invoice. |
+| `invoice.expired` | An invoice expired without payment. | Invoice passed its due date without a completed payment. |
+| `refund.completed` | A refund transaction has been confirmed. | Refund sent and confirmed on-chain. |
+| `refund.failed` | A refund transaction failed. | On-chain refund transaction reverted. |
+
+## Webhook Payload
+
+Every webhook delivery is a JSON POST request with the following structure:
+
+```json
+{
+  "id": "evt_f4e3d2c1b0a9z8y7",
+  "type": "payment.completed",
+  "created_at": "2026-03-01T13:04:12Z",
+  "data": {
+    "payment_id": "pay_a1b2c3d4e5f6g7h8",
+    "status": "completed",
+    "amount": "99.99",
+    "currency": "USD",
+    "chain": "polygon",
+    "token": "USDC",
+    "token_amount": "99.990000",
+    "tx_hash": "0x7d3f8c...e2a1b0",
+    "payer_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
+    "metadata": {
+      "order_id": "order_12345",
+      "user_id": "usr_8473"
+    },
+    "reference_id": "sub_renewal_2026_03",
+    "completed_at": "2026-03-01T13:04:12Z",
+    "created_at": "2026-03-01T13:00:00Z"
+  }
+}
+```
+
+### Webhook Headers
+
+Each webhook request includes these headers:
+
+| Header | Description |
+|--------|-------------|
+| `Content-Type` | Always `application/json`. |
+| `X-GoBlink-Signature` | HMAC-SHA256 hex digest of the request body, computed with your webhook signing secret. |
+| `X-GoBlink-Event` | The event type (e.g., `payment.completed`). |
+| `X-GoBlink-Delivery-Id` | Unique ID for this delivery attempt. Use for deduplication. |
+| `X-GoBlink-Timestamp` | Unix timestamp of when the event was generated. |
+
+## Signature Verification
+
+Every webhook payload is signed using HMAC-SHA256. You must verify the signature before processing the event to ensure it was sent by goBlink and has not been tampered with.
+
+The signature is computed as:
+
+```
+HMAC-SHA256(webhook_signing_secret, request_body)
+```
+
+where `request_body` is the raw JSON string (not parsed).
+
+### Node.js Verification
+
+```javascript
+import crypto from "crypto";
+
+function verifyWebhookSignature(rawBody, signature, secret) {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature, "hex"),
+    Buffer.from(expected, "hex")
+  );
+}
+
+// Express.js example
+app.post("/webhooks/goblink", express.raw({ type: "application/json" }), (req, res) => {
+  const signature = req.headers["x-goblink-signature"];
+  const secret = process.env.GOBLINK_WEBHOOK_SECRET;
+
+  if (!verifyWebhookSignature(req.body, signature, secret)) {
+    console.error("Invalid webhook signature");
+    return res.status(401).send("Invalid signature");
+  }
+
+  const event = JSON.parse(req.body);
+  console.log("Verified event:", event.type, event.id);
+
+  // Process the event
+  handleEvent(event);
+
+  res.status(200).send("OK");
+});
+```
+
+### Python Verification
+
+```python
+import hmac
+import hashlib
+from flask import Flask, request, abort
+
+app = Flask(__name__)
+
+WEBHOOK_SECRET = os.environ["GOBLINK_WEBHOOK_SECRET"]
+
+def verify_signature(payload: bytes, signature: str, secret: str) -> bool:
+    expected = hmac.new(
+        secret.encode("utf-8"),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
+
+@app.route("/webhooks/goblink", methods=["POST"])
+def handle_webhook():
+    signature = request.headers.get("X-GoBlink-Signature")
+    if not signature:
+        abort(401)
+
+    if not verify_signature(request.data, signature, WEBHOOK_SECRET):
+        abort(401)
+
+    event = request.get_json()
+    print(f"Verified event: {event['type']} {event['id']}")
+
+    handle_event(event)
+
+    return "OK", 200
+```
+
+### Timestamp Validation
+
+To prevent replay attacks, validate the `X-GoBlink-Timestamp` header. Reject events older than 5 minutes:
+
+```javascript
+function isTimestampValid(timestamp, toleranceSeconds = 300) {
+  const eventTime = parseInt(timestamp, 10);
+  const now = Math.floor(Date.now() / 1000);
+  return Math.abs(now - eventTime) <= toleranceSeconds;
+}
+
+// In your webhook handler
+const timestamp = req.headers["x-goblink-timestamp"];
+if (!isTimestampValid(timestamp)) {
+  return res.status(400).send("Timestamp too old");
+}
+```
+
+## Retry Policy
+
+If your endpoint does not respond with a `2xx` status code within 10 seconds, goBlink retries the delivery with exponential backoff:
+
+| Attempt | Delay After Previous Attempt |
+|---------|------------------------------|
+| 1 | Immediate |
+| 2 | 1 minute |
+| 3 | 5 minutes |
+| 4 | 30 minutes |
+| 5 | 2 hours |
+| 6 | 8 hours |
+| 7 | 24 hours |
+
+After 7 failed attempts over approximately 34 hours, the delivery is marked as failed. You can manually retry failed deliveries from the dashboard.
+
+### Idempotency
+
+Because retries may deliver the same event multiple times, your webhook handler should be idempotent. Use the `X-GoBlink-Delivery-Id` header or the `event.id` to deduplicate events:
+
+```javascript
+const processedEvents = new Set(); // In production, use a database
+
+app.post("/webhooks/goblink", (req, res) => {
+  const event = req.body;
+
+  if (processedEvents.has(event.id)) {
+    console.log("Duplicate event, skipping:", event.id);
+    return res.status(200).send("OK");
+  }
+
+  processedEvents.add(event.id);
+  handleEvent(event);
+
+  res.status(200).send("OK");
+});
+```
+
+## Event-Specific Payloads
+
+### payment.completed
+
+```json
+{
+  "id": "evt_f4e3d2c1b0a9z8y7",
+  "type": "payment.completed",
+  "created_at": "2026-03-01T13:04:12Z",
+  "data": {
+    "payment_id": "pay_a1b2c3d4e5f6g7h8",
+    "status": "completed",
+    "amount": "99.99",
+    "currency": "USD",
+    "chain": "polygon",
+    "token": "USDC",
+    "token_amount": "99.990000",
+    "tx_hash": "0x7d3f8c...e2a1b0",
+    "payer_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
+    "metadata": {},
+    "reference_id": "sub_renewal_2026_03",
+    "completed_at": "2026-03-01T13:04:12Z",
+    "created_at": "2026-03-01T13:00:00Z"
+  }
+}
+```
+
+### payment.failed
+
+```json
+{
+  "id": "evt_x7w6v5u4t3s2r1q0",
+  "type": "payment.failed",
+  "created_at": "2026-03-01T13:06:00Z",
+  "data": {
+    "payment_id": "pay_j9k8l7m6n5o4p3q2",
+    "status": "failed",
+    "amount": "50.00",
+    "currency": "USD",
+    "chain": "ethereum",
+    "token": "USDC",
+    "failure_reason": "TRANSACTION_REVERTED",
+    "failure_message": "Transaction reverted: insufficient allowance",
+    "tx_hash": "0xdef789...abc012",
+    "created_at": "2026-03-01T13:03:00Z"
+  }
+}
+```
+
+### invoice.paid
+
+```json
+{
+  "id": "evt_p0o9n8m7l6k5j4i3",
+  "type": "invoice.paid",
+  "created_at": "2026-03-01T15:22:00Z",
+  "data": {
+    "invoice_id": "inv_c3d4e5f6g7h8i9j0",
+    "status": "paid",
+    "amount": "250.00",
+    "currency": "USD",
+    "payment_id": "pay_r1s2t3u4v5w6x7y8",
+    "chain": "base",
+    "token": "USDC",
+    "customer_email": "bob@example.com",
+    "paid_at": "2026-03-01T15:22:00Z",
+    "created_at": "2026-03-01T10:00:00Z"
+  }
+}
+```
+
+### refund.completed
+
+```json
+{
+  "id": "evt_h3g2f1e0d9c8b7a6",
+  "type": "refund.completed",
+  "created_at": "2026-03-01T16:05:30Z",
+  "data": {
+    "refund_id": "ref_m1n2o3p4q5r6s7t8",
+    "payment_id": "pay_a1b2c3d4e5f6g7h8",
+    "status": "completed",
+    "amount": "25.00",
+    "currency": "USD",
+    "chain": "polygon",
+    "token": "USDC",
+    "tx_hash": "0x456abc...789def",
+    "refunded_to": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
+    "completed_at": "2026-03-01T16:05:30Z",
+    "created_at": "2026-03-01T14:00:00Z"
+  }
+}
+```
+
+## Testing Webhooks
+
+### Using the Dashboard
+
+The goBlink Dashboard includes a webhook testing tool:
+
+1. Go to **Settings > Webhooks**.
+2. Select your endpoint.
+3. Click **Send Test Event**.
+4. Choose an event type.
+5. The dashboard sends a real webhook to your endpoint and displays the response.
+
+### Using the CLI
+
+You can also trigger test webhooks using cURL:
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/webhooks/test \
+  -H "Authorization: Bearer gb_test_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "endpoint_id": "we_a1b2c3d4",
+    "event_type": "payment.completed"
+  }'
+```
+
+### Local Development
+
+For local development, use a tunneling tool like [ngrok](https://ngrok.com) to expose your local server:
+
+```bash
+# Start your local server
+node server.js  # Listening on port 3000
+
+# In another terminal, start ngrok
+ngrok http 3000
+
+# Copy the ngrok HTTPS URL and register it as your webhook endpoint
+# e.g., https://a1b2c3d4.ngrok.io/webhooks/goblink
+```
+
+## Managing Webhook Endpoints
+
+### List Endpoints
+
+```bash
+curl https://merchant.goblink.io/api/v1/webhooks/endpoints \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+### Delete an Endpoint
+
+```bash
+curl -X DELETE https://merchant.goblink.io/api/v1/webhooks/endpoints/we_a1b2c3d4 \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+### View Delivery History
+
+```bash
+curl "https://merchant.goblink.io/api/v1/webhooks/endpoints/we_a1b2c3d4/deliveries?limit=20" \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+The delivery history response includes the HTTP status code, response body, and latency for each attempt, making it easy to debug failed deliveries.
+
+## Best Practices
+
+- **Always verify signatures.** Never process a webhook without validating the `X-GoBlink-Signature` header.
+- **Respond quickly.** Return a `200` response immediately, then process the event asynchronously. Long-running operations should be handled in a background job.
+- **Implement idempotency.** Your handler may receive the same event multiple times due to retries. Use the event `id` to deduplicate.
+- **Use the event payload.** Do not call the API to fetch the latest state inside your webhook handler -- use the data in the event payload. This avoids race conditions and unnecessary API calls.
+- **Monitor delivery health.** Check the webhook delivery dashboard regularly for failed deliveries and fix endpoint issues promptly.
+- **Log raw payloads.** Store the raw JSON body and headers for debugging and audit purposes.

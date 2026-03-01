@@ -1,0 +1,141 @@
+---
+title: Settlement
+description: Understand how goBlink settles merchant payments, including timing, token conversion, and reconciliation.
+---
+
+## How Settlement Works
+
+When a customer pays through goBlink, their tokens go into a smart contract escrow on the source chain. The 1Click protocol then coordinates a cross-chain swap via NEAR Intents, converting the customer's tokens into your preferred settlement token and delivering them directly to your settlement wallet. At no point does goBlink hold or control your funds.
+
+This means settlement is effectively **instant**. As soon as the cross-chain swap completes (typically 10 to 60 seconds after the customer confirms payment), the settlement tokens arrive in your wallet. There are no batched payouts, no holding periods, and no manual withdrawal steps.
+
+## Settlement Flow
+
+Here is the step-by-step flow for a typical payment and settlement:
+
+1. **Customer initiates payment.** They connect their wallet on the goBlink checkout page and confirm the transaction.
+2. **Source tokens are escrowed.** The customer's tokens are locked in a smart contract on their chain.
+3. **Solver fulfills the intent.** A solver delivers your settlement token to your wallet on your settlement chain.
+4. **Proof is verified.** The NEAR Intents protocol verifies the solver's fulfillment on-chain.
+5. **Escrowed tokens are released to the solver.** The source chain escrow releases the customer's tokens to the solver.
+6. **Payment is marked complete.** goBlink updates the payment status to "completed" and fires the `payment.completed` webhook.
+
+Steps 2 through 6 happen automatically. You do not need to take any action after the customer initiates the payment.
+
+## Settlement Configuration
+
+You configure your settlement preferences during [Merchant Onboarding](/users/merchant/onboarding) and can change them at any time from **Settings > Settlement** in the dashboard.
+
+| Setting | Options | Notes |
+|---|---|---|
+| Settlement chain | Any of the 12 supported chains | Choose a chain with low fees for maximum efficiency. |
+| Settlement token | Any supported token on the chosen chain | USDC is the most common choice for stable value. |
+| Settlement wallet | Your wallet address on the chosen chain | Must be verified via wallet signing or micro-transaction. |
+
+### Choosing a Settlement Chain
+
+Your settlement chain determines the gas cost absorbed by the solver (reflected in the exchange rate) and the finality speed of your settlement. For most merchants, an L2 chain like **Arbitrum**, **Base**, or **Optimism** is ideal:
+
+- Near-zero settlement costs reflected in better exchange rates
+- Sub-second finality
+- Full Ethereum security guarantees
+- Wide wallet compatibility
+
+If you prefer to receive funds on Ethereum mainnet, be aware that higher gas costs on Ethereum are reflected in slightly less favorable exchange rates for your customers.
+
+### Choosing a Settlement Token
+
+Most merchants settle in a stablecoin like **USDC** or **USDT** to avoid volatility. However, you can settle in any supported token. Some merchants settle in ETH, SOL, or BTC if they prefer to accumulate those assets.
+
+Keep in mind that if you settle in a volatile token, the USD-equivalent value of each payment will fluctuate between the time the customer pays and when you spend or convert the tokens.
+
+## Fee Deductions
+
+Fees are deducted from the payment before settlement. Here is how the math works for a $100 payment with a 1.0% platform fee:
+
+| Line Item | Amount |
+|---|---|
+| Customer pays | $100.00 equivalent |
+| Platform fee (1.0%) | -$1.00 |
+| Net settlement | $99.00 equivalent in your settlement token |
+
+The platform fee percentage depends on your merchant tier:
+
+| Tier | Platform Fee |
+|---|---|
+| Starter | 1.0% |
+| Growth | 0.75% |
+| Business | Custom (contact sales) |
+
+Network fees on the source and destination chains are absorbed by the solver and factored into the exchange rate. You do not pay gas fees separately.
+
+## Reconciliation
+
+### Dashboard View
+
+Every settled payment appears in the **Transactions** tab with full details including:
+
+- The exact amount of settlement tokens delivered
+- The transaction hash on your settlement chain (clickable link to block explorer)
+- The exchange rate applied
+- The platform fee deducted
+- Any metadata you attached to the payment (e.g., order ID)
+
+### CSV Export
+
+Export your transaction history as a CSV for bookkeeping, accounting, or tax reporting. The CSV includes columns for:
+
+- Payment ID
+- Created and completed timestamps
+- Customer's source chain, token, and amount
+- Your settlement chain, token, and amount
+- Exchange rate
+- Platform fee
+- Transaction hashes (source and destination)
+- Payment metadata
+- Status
+
+Use date range and status filters before exporting to narrow the dataset.
+
+### API Reconciliation
+
+Query the `GET /v1/payments` endpoint with your `gb_live_` secret key to fetch payment data programmatically. You can filter by date range, status, and settlement chain. This is useful for automated reconciliation against your order management system or accounting software.
+
+## Settlement Edge Cases
+
+### What If My Settlement Wallet Is Compromised?
+
+If you suspect your settlement wallet has been compromised:
+
+1. Immediately go to **Settings > Settlement** and change your settlement wallet address to a secure wallet.
+2. Verify ownership of the new wallet.
+3. All future payments will settle to the new wallet. In-progress payments will still settle to the old wallet.
+4. Contact goBlink support if you need to pause incoming payments while you secure your accounts.
+
+### What If I Want to Change Settlement Token Mid-Stream?
+
+Changing your settlement token takes effect immediately for new payments. Payments that are already in progress (customer has paid, swap is executing) will settle using the configuration that was active when the payment was initiated. There is no gap or interruption.
+
+### What If the Solver Cannot Deliver My Settlement Token?
+
+In rare cases, a solver may be unable to fulfill a payment in your exact settlement token due to temporary liquidity issues. When this happens:
+
+- The payment remains in a "pending" state.
+- goBlink retries with alternative solvers for up to 5 minutes.
+- If no solver can fulfill, the customer's escrowed tokens are refunded, and the payment is marked as "failed."
+- You receive a `payment.failed` webhook with a `reason` field explaining the failure.
+- The customer is notified and can retry the payment.
+
+This scenario is uncommon for major tokens like USDC, USDT, ETH, and SOL. It is more likely for low-liquidity tokens.
+
+## Settlement Timing Summary
+
+| Stage | Typical Duration |
+|---|---|
+| Customer confirms payment | 0 seconds (user action) |
+| Source chain confirmation | 1 second -- 2.5 minutes (depends on chain) |
+| Solver fulfillment | 5 -- 30 seconds |
+| Destination delivery confirmation | 1 second -- 30 seconds |
+| **Total: payment to settlement** | **10 seconds -- 3 minutes** |
+
+Contrast this with traditional payment processors that settle in 1 to 7 business days. With goBlink, you have the funds in your wallet before the customer finishes closing the browser tab.

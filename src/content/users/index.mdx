@@ -1,0 +1,63 @@
+---
+title: Users Guide
+description: Everything you need to know about using goBlink for cross-chain crypto transfers, payments, and merchant services.
+---
+
+## Welcome to goBlink
+
+goBlink is a cross-chain crypto transfer platform that lets you send and receive tokens across 12 supported blockchains instantly. Whether you are transferring funds between your own wallets, paying a friend on a different chain, or accepting payments as a merchant, goBlink handles the bridging and swapping behind the scenes so you never have to think about it.
+
+At its core, goBlink is powered by **1Click**, built on **NEAR Intents** -- a protocol layer that coordinates cross-chain swaps atomically. You pick a source token, pick a destination token and chain, and goBlink figures out the rest. No manual bridging. No wrapped tokens cluttering your wallet. No failed transactions that leave funds stranded on an intermediate chain.
+
+## Who Is goBlink For?
+
+### Everyday Users
+
+If you hold crypto on one chain but need to pay someone on another, goBlink eliminates the multi-step headache of bridging, swapping, and waiting. Connect your wallet, enter a destination address, and send. The recipient gets the token they want on the chain they want, typically within 30 seconds.
+
+### Merchants and Businesses
+
+goBlink provides a complete non-custodial payment processing stack. Accept payments in any token on any supported chain, and receive settlement directly to your own wallet in the token you prefer. No intermediary holds your funds. You get API keys, webhook notifications, branded checkout pages, invoices, and a point-of-sale interface -- all without giving up custody of a single satoshi.
+
+### Developers
+
+If you are building an application that needs cross-chain payment capabilities, goBlink offers a straightforward REST API and webhook system. Generate payment links programmatically, track transaction status in real time, and reconcile settlements via CSV export or API polling.
+
+## What You Can Do with goBlink
+
+- **Send cross-chain transfers** -- Move tokens between any two of the 12 supported chains in a single transaction.
+- **Create payment links** -- Generate shareable links that let anyone pay you in their preferred token.
+- **Accept merchant payments** -- Integrate goBlink into your checkout flow with API keys and webhooks.
+- **Use the Telegram bot** -- Send and receive crypto directly from Telegram without visiting a website.
+- **Generate invoices** -- Create professional invoices with built-in crypto payment options.
+- **Run a point-of-sale terminal** -- Accept in-person crypto payments through goBlink's POS interface.
+
+## How This Guide Is Organized
+
+| Section | What You Will Learn |
+|---|---|
+| [Getting Started](/users/getting-started) | Connecting your wallet and making your first transfer |
+| [How Transfers Work](/users/how-transfers-work) | The technical flow behind cross-chain swaps |
+| [Supported Chains](/users/supported-chains) | Complete list of chains, tokens, and fee details |
+| [Payment Links](/users/payment-links) | Creating and sharing payment links |
+| [Telegram Bot](/users/telegram-bot) | Sending crypto through Telegram |
+| [Merchant Onboarding](/users/merchant/onboarding) | Setting up your merchant account |
+| [Dashboard Tour](/users/merchant/dashboard-tour) | Navigating the merchant dashboard |
+| [Settlement](/users/merchant/settlement) | Understanding how and when you get paid |
+| [Test Mode](/users/merchant/test-mode) | Testing your integration before going live |
+| [Invoices & POS](/users/merchant/invoices-pos) | Generating invoices and using the POS terminal |
+| [Troubleshooting](/users/merchant/troubleshooting) | Solving common issues |
+
+## Key Concepts
+
+### Non-Custodial by Design
+
+goBlink never takes custody of your funds. Transfers are executed through smart contracts and the NEAR Intents protocol. When a swap completes, tokens are delivered directly to the destination wallet. For merchants, settlement goes straight to the wallet address you configure -- there is no goBlink-controlled holding account.
+
+### 1Click and NEAR Intents
+
+1Click is the cross-chain execution layer that powers goBlink. It uses NEAR Intents to coordinate atomic swaps across chains. An "intent" is a signed message expressing what you want to happen (for example, "swap 100 USDC on Ethereum for SOL on Solana"). Solvers compete to fulfill that intent at the best rate, and the protocol ensures either the full swap completes or nothing happens -- your funds are never at risk in a partial state.
+
+### Finality and Speed
+
+Most goBlink transfers complete within 10 to 60 seconds, depending on the source and destination chains. The platform monitors block confirmations on both sides and updates the transaction status in real time. You will see a clear status indicator throughout the process: pending, confirming, completing, and done.

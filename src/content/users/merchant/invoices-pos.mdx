@@ -1,0 +1,191 @@
+---
+title: Invoices & Point of Sale
+description: Generate professional crypto invoices and accept in-person payments with goBlink's point-of-sale terminal.
+---
+
+## Invoices
+
+### What Are goBlink Invoices?
+
+goBlink invoices are professional payment documents that include a built-in crypto payment option. You create an invoice in the merchant dashboard, fill in the client and line item details, and goBlink generates a shareable document with an embedded payment link. When the client opens the invoice, they can pay with any token on any supported chain, and you receive settlement in your preferred token.
+
+Invoices are ideal for freelancers, agencies, and service businesses that need to bill clients with clear line items, due dates, and payment terms.
+
+### Creating an Invoice
+
+1. Go to the **Invoices** tab in the merchant dashboard.
+2. Click **Create Invoice**.
+3. Fill in the invoice details:
+
+| Field | Required | Description |
+|---|---|---|
+| Invoice number | Auto-generated | A sequential number like `INV-2026-0042`. You can edit it. |
+| Client name | Yes | The name of the person or business being billed. |
+| Client email | Optional | If provided, goBlink can send the invoice directly via email. |
+| Issue date | Yes | Defaults to today. |
+| Due date | Yes | The payment deadline. Invoices become "Overdue" after this date. |
+| Currency | Yes | The currency for line item amounts (USD, EUR, GBP, etc.). |
+| Line items | Yes (at least one) | Description, quantity, unit price, and total for each line item. |
+| Tax rate | Optional | A percentage added to the subtotal. |
+| Discount | Optional | A fixed amount or percentage subtracted from the subtotal. |
+| Notes | Optional | Payment terms, thank-you message, or other notes displayed on the invoice. |
+
+### Line Items
+
+Each line item has:
+
+- **Description** -- What you are billing for (e.g., "Website redesign -- Phase 1").
+- **Quantity** -- Number of units.
+- **Unit price** -- Price per unit in the invoice currency.
+- **Amount** -- Automatically calculated as quantity times unit price.
+
+You can add as many line items as you need. The subtotal, tax, discount, and grand total are calculated automatically.
+
+### Invoice Preview
+
+Before sending, click **Preview** to see exactly what the client will receive. The invoice includes:
+
+- Your business name, logo, and contact information
+- The client's name and details
+- A professional table of line items with subtotal, tax, discount, and total
+- Due date and payment status
+- A prominent **Pay Now** button that opens the goBlink checkout page
+
+### Sending Invoices
+
+You have three options for delivering an invoice:
+
+- **Email** -- If you entered a client email, click **Send** to deliver the invoice via goBlink's email system. The email includes a PDF attachment and a direct link to the payment page.
+- **Share link** -- Copy the invoice URL and send it through any channel (Slack, WhatsApp, etc.).
+- **Download PDF** -- Download a PDF version for offline delivery or record-keeping.
+
+### Invoice Statuses
+
+| Status | Meaning |
+|---|---|
+| Draft | The invoice has been created but not sent to the client. |
+| Sent | The invoice has been sent or the link has been shared. |
+| Viewed | The client has opened the invoice link (tracked via URL). |
+| Paid | The client has completed payment through the invoice. |
+| Overdue | The due date has passed without payment. |
+| Void | You manually voided the invoice. It can no longer be paid. |
+
+### Automatic Reminders
+
+goBlink can send automatic email reminders for unpaid invoices:
+
+- **Before due date** -- An optional reminder 3 days before the due date.
+- **On due date** -- A reminder on the day the payment is due.
+- **After due date** -- Reminders at 3, 7, and 14 days after the due date for overdue invoices.
+
+Enable or disable reminders per invoice or set a default policy in **Settings > Invoices**.
+
+### Recurring Invoices
+
+For clients you bill regularly, create a **recurring invoice**:
+
+1. Create an invoice as usual.
+2. Toggle **Make Recurring** before saving.
+3. Set the recurrence frequency: weekly, bi-weekly, monthly, quarterly, or annually.
+4. Set an optional end date or number of occurrences.
+
+goBlink automatically creates and sends a new invoice at each interval with an incremented invoice number. Recurring invoices use the same line items, client details, and payment terms as the template.
+
+## Point of Sale (POS)
+
+### What Is the goBlink POS?
+
+The goBlink POS is a browser-based point-of-sale terminal designed for accepting in-person crypto payments. It works on any device with a browser -- tablets, phones, laptops -- and generates QR codes that customers scan with their wallet to pay.
+
+The POS is ideal for:
+
+- Retail stores accepting crypto alongside traditional payment methods
+- Market vendors and pop-up shops
+- Restaurants and cafes
+- Event ticket counters
+- Service providers who meet clients in person
+
+### Accessing the POS
+
+1. In the merchant dashboard, go to **Settings > POS**.
+2. Click **Enable POS**.
+3. The POS terminal is accessible at `merchant.goblink.io/pos` when you are logged in.
+4. For dedicated POS devices (e.g., a tablet at a checkout counter), you can create a **POS-only login** that restricts access to the POS screen only, without access to the full dashboard.
+
+### Using the POS
+
+#### Quick Charge
+
+The fastest way to accept a payment:
+
+1. Open the POS terminal.
+2. Enter the payment amount using the on-screen keypad.
+3. Optionally add a description or reference number.
+4. Tap **Charge**.
+5. A QR code appears on screen. The customer scans it with their wallet app.
+6. The customer selects their payment token and confirms the transaction in their wallet.
+7. The POS screen updates in real time: scanning, confirming, completing, done.
+8. When the payment completes, the screen shows a green checkmark and the settlement details.
+
+#### Item-Based Checkout
+
+If you have a product catalog configured, you can use item-based checkout:
+
+1. Open the POS terminal and tap **Items**.
+2. Browse or search your product catalog.
+3. Tap items to add them to the cart. Adjust quantities as needed.
+4. The total is calculated automatically, including any configured tax.
+5. Tap **Charge** to generate the QR code.
+6. The customer scans and pays as with Quick Charge.
+
+### Product Catalog
+
+Set up your product catalog in **Settings > POS > Products**:
+
+| Field | Description |
+|---|---|
+| Product name | The item name displayed on the POS screen and receipt. |
+| Price | The price in your configured currency. |
+| Category | Optional grouping (e.g., "Beverages," "Accessories"). |
+| SKU | Optional stock-keeping unit for inventory tracking. |
+| Image | Optional product image displayed on the POS. |
+
+Products can be added manually or imported via CSV. There is no limit on the number of products.
+
+### Receipts
+
+After every POS transaction, goBlink can:
+
+- **Display a digital receipt** on the POS screen that the customer can photograph.
+- **Send an email receipt** if the customer provides their email address (optional).
+- **Print a receipt** if the POS device is connected to a receipt printer via the browser's print dialog.
+
+Receipts include the business name, items purchased, total, payment method (token and chain), transaction hash, and timestamp.
+
+### POS Settings
+
+| Setting | Description |
+|---|---|
+| Currency | The fiat currency displayed on the keypad and product prices. |
+| Tax rate | Default tax rate applied to all POS transactions. |
+| Tip options | Optional tip percentages displayed after the customer scans (e.g., 10%, 15%, 20%). |
+| Receipt behavior | Automatically show receipt, prompt for email, or skip. |
+| Sound notifications | Play a sound when a payment completes. |
+| Idle timeout | Lock the POS screen after a period of inactivity (for shared devices). |
+
+### Offline Considerations
+
+The goBlink POS requires an internet connection to generate QR codes and process payments. It does not support offline mode. Make sure your POS device has a reliable internet connection. If the connection drops mid-payment, the payment will continue processing on-chain and the POS will sync the result when the connection is restored.
+
+## Invoices vs. Payment Links vs. POS
+
+| Feature | Invoices | Payment Links | POS |
+|---|---|---|---|
+| Best for | Billing clients with line items | Simple online payments | In-person payments |
+| Itemized billing | Yes | No | Optional (with catalog) |
+| Due dates | Yes | Optional expiration | N/A |
+| Email delivery | Yes | Manual sharing | N/A |
+| QR code | On the invoice page | Available | Primary interface |
+| Recurring | Yes | No | N/A |
+| PDF export | Yes | No | Receipts only |
+| API creation | Yes | Yes | No (dashboard only) |

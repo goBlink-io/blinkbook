@@ -1,0 +1,227 @@
+---
+title: Changelog
+description: A chronological record of changes, new features, and fixes to the goBlink Merchant API and developer tools.
+---
+
+## Overview
+
+This changelog tracks updates to the goBlink Merchant API, hosted checkout, SDKs, and developer tooling. Entries are listed in reverse chronological order.
+
+For SDK-specific changes, see the [SDK Reference changelog](/developers/sdk#changelog).
+
+Subscribe to API update notifications in the dashboard under **Settings > Notifications > API Updates**.
+
+---
+
+## 2026-02-20
+
+### New: Auto-Pagination in Node.js SDK
+
+The `@goblink/sdk` v1.4.0 release adds `listAutoPaginate()` methods to the Payments and Invoices resources. This allows you to iterate through all results without manually handling cursors.
+
+```typescript
+for await (const payment of client.payments.listAutoPaginate({
+  status: "completed",
+})) {
+  console.log(payment.paymentId);
+}
+```
+
+---
+
+## 2026-02-10
+
+### New: Avalanche and BNB Chain Support
+
+goBlink now supports payments on Avalanche (C-Chain) and BNB Chain. Customers can pay with AVAX, BNB, USDC, USDT, and BUSD on these networks.
+
+**New chain IDs:** `avalanche`, `bsc`
+
+Update your `accepted_chains` arrays if you restrict supported chains.
+
+---
+
+## 2026-01-28
+
+### Improvement: Checkout Localization
+
+The hosted checkout page now supports 7 languages. Set the `locale` parameter in `checkout_options` when creating a payment:
+
+```json
+{
+  "checkout_options": {
+    "locale": "es"
+  }
+}
+```
+
+**Supported locales:** `en`, `es`, `fr`, `de`, `ja`, `ko`, `zh`
+
+---
+
+## 2026-01-15
+
+### New: React Components in SDK
+
+The `@goblink/sdk` v1.3.0 release introduces React components for client-side payment integration:
+
+- `<GoBlinkProvider>` -- Context provider for API key configuration.
+- `<GoBlinkButton>` -- Drop-in payment button component.
+- `useGoBlinkCheckout()` -- Hook for custom checkout UIs.
+
+```typescript
+import { GoBlinkButton } from "@goblink/sdk/react";
+
+<GoBlinkButton
+  amount="49.99"
+  currency="USD"
+  onSuccess={(payment) => console.log(payment)}
+/>
+```
+
+See the [SDK Reference](/developers/sdk#react-integration) for full documentation.
+
+---
+
+## 2025-12-15
+
+### Improvement: Webhook Retry Visibility
+
+The webhook delivery log in the dashboard now shows detailed retry information:
+
+- Response status code and body for each delivery attempt.
+- Latency per attempt.
+- Next scheduled retry timestamp.
+- Manual retry button for failed deliveries.
+
+Navigate to **Settings > Webhooks > Delivery History** to view logs.
+
+---
+
+## 2025-12-01
+
+### New: Custom Checkout Domains
+
+You can now serve the hosted checkout page from your own subdomain (e.g., `pay.yourstore.com`). Configure it under **Settings > Checkout > Custom Domain**.
+
+See [Checkout: Custom Domain](/developers/checkout#custom-domain) for setup instructions.
+
+---
+
+## 2025-11-30
+
+### New: Invoice Finalization and Voiding
+
+The Invoices API now supports a draft workflow:
+
+- Invoices are created in `draft` status by default.
+- Use `POST /invoices/:id/finalize` to move a draft to `open` status.
+- Use `POST /invoices/:id/void` to cancel an open invoice.
+- Draft invoices can be edited with `PATCH /invoices/:id`.
+
+**SDK:** Updated in `@goblink/sdk` v1.2.0 with `client.invoices.finalize()` and `client.invoices.void()` methods.
+
+**Breaking change:** Invoices created without the `send_email: true` parameter now default to `draft` status instead of `open`. To preserve the previous behavior, set `send_email: true` or call the finalize endpoint after creation.
+
+---
+
+## 2025-11-15
+
+### Improvement: IP Allowlisting for API Keys
+
+You can now restrict API key usage to specific IP addresses or CIDR ranges. Configure allowlists under **Settings > API Keys** in the dashboard.
+
+When an allowlist is active, requests from non-listed IPs receive a `403 Forbidden` response with the `IP_NOT_ALLOWED` error code.
+
+---
+
+## 2025-10-20
+
+### New: Partial Refunds
+
+The Refunds API now supports partial refunds. Pass an `amount` parameter that is less than the original payment amount:
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/refunds \
+  -H "Authorization: Bearer gb_live_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "payment_id": "pay_a1b2c3d4e5f6g7h8",
+    "amount": "25.00",
+    "reason": "Partial refund for returned item"
+  }'
+```
+
+Multiple partial refunds can be issued for a single payment, up to the original amount. The payment status changes to `partially_refunded` after the first partial refund and `refunded` once the full amount has been returned.
+
+---
+
+## 2025-10-10
+
+### New: Webhook Signature Verification in SDK
+
+The `@goblink/sdk` v1.1.0 adds helpers for webhook signature verification:
+
+- `GoBlink.webhooks.verifySignature()` -- Standalone verification function.
+- `GoBlinkWebhookMiddleware()` -- Express.js middleware for automatic verification.
+
+```typescript
+import { GoBlinkWebhookMiddleware } from "@goblink/sdk/express";
+
+app.post("/webhooks/goblink", GoBlinkWebhookMiddleware({ secret }), handler);
+```
+
+---
+
+## 2025-09-15
+
+### Improvement: Idempotency Keys
+
+All `POST` endpoints now support the `Idempotency-Key` header. Send the same key within 24 hours to safely retry requests without creating duplicate resources.
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/payments \
+  -H "Idempotency-Key: order_12345_attempt_1" \
+  ...
+```
+
+If you reuse a key with different parameters, the API returns a `409 Conflict` with the `IDEMPOTENCY_CONFLICT` error code.
+
+---
+
+## 2025-09-01
+
+### New: goBlink Merchant API v1 Launch
+
+The goBlink Merchant API v1 is now generally available. This release includes:
+
+- **Payments API** -- Create, retrieve, and list cross-chain crypto payments.
+- **Invoices API** -- Generate itemized invoices with line items and tax support.
+- **Refunds API** -- Issue full refunds for completed payments.
+- **Webhooks** -- Real-time event notifications with HMAC-SHA256 signatures.
+- **Hosted Checkout** -- Branded checkout pages with wallet connection and chain selection.
+- **Embeddable Button** -- Drop-in JavaScript widget for inline payments.
+- **@goblink/sdk** -- Official Node.js/TypeScript SDK (v1.0.0).
+- **goblink Python SDK** -- Official Python SDK (v1.0.0).
+
+**Supported chains at launch:** Ethereum, Polygon, Arbitrum, Optimism, Base, Solana.
+
+**Supported tokens:** ETH, USDC, USDT, DAI, SOL, MATIC.
+
+See the [Developer Overview](/developers) and [Quickstart](/developers/quickstart) to get started.
+
+---
+
+## Deprecation Policy
+
+goBlink follows a 6-month deprecation policy for breaking changes:
+
+1. **Announcement** -- Breaking changes are announced in this changelog and via email to all merchants with active API keys.
+2. **Deprecation period** -- The old behavior continues to work for 6 months.
+3. **Sunset** -- After the deprecation period, the old behavior is removed.
+
+Non-breaking changes (new fields, new endpoints, new optional parameters) are released without a deprecation period.
+
+## Versioning
+
+The goBlink API uses URL-based versioning (`/api/v1`). The current version is `v1`. When a new major version is released, the previous version will be supported for at least 12 months.

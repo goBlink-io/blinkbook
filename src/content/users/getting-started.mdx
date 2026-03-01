@@ -1,0 +1,97 @@
+---
+title: Getting Started
+description: Connect your wallet, fund your account, and make your first cross-chain transfer with goBlink in under five minutes.
+---
+
+## Prerequisites
+
+Before you begin, you will need:
+
+- A crypto wallet compatible with at least one of goBlink's 12 supported chains. Popular options include MetaMask (for EVM chains), Phantom (for Solana), and NEAR Wallet (for NEAR).
+- Some tokens on the source chain to cover the transfer amount plus gas fees.
+- A destination wallet address on the chain you want to send to. This can be your own wallet on another chain or someone else's address.
+
+## Step 1: Connect Your Wallet
+
+1. Visit [app.goblink.io](https://app.goblink.io) and click **Connect Wallet** in the top right corner.
+2. Select your wallet provider from the list. goBlink supports MetaMask, WalletConnect, Coinbase Wallet, Phantom, and NEAR Wallet out of the box.
+3. Approve the connection request in your wallet. goBlink requests read-only access to your address -- it will never ask for your private keys or seed phrase.
+4. Once connected, you will see your wallet address and token balances displayed in the top navigation bar.
+
+### Connecting Multiple Wallets
+
+If you want to transfer between your own wallets on different chains, you can connect multiple wallets in a single session. Click the wallet icon in the nav bar and select **Add Wallet** to connect an additional provider. goBlink keeps track of all connected wallets and lets you pick the source and destination independently.
+
+## Step 2: Choose Source and Destination
+
+The main transfer screen has two panels:
+
+- **From** -- Select the chain and token you want to send. Your available balance is shown below the token selector.
+- **To** -- Select the destination chain and token. Enter the recipient wallet address, or select one of your connected wallets.
+
+As you fill in these fields, goBlink fetches a real-time quote showing:
+
+- The exchange rate between the source and destination tokens
+- The estimated network fees on both chains
+- The goBlink platform fee (0.1% for standard transfers)
+- The estimated time to completion
+
+### Selecting Tokens
+
+The token selector shows your wallet's balances for all recognized tokens on the selected chain. You can search by token name or contract address. If a token is not listed, you can paste its contract address to add it manually -- goBlink will verify the contract and display the token details before allowing a transfer.
+
+## Step 3: Review and Confirm
+
+After entering the transfer details, click **Review Transfer**. A summary screen shows:
+
+| Field | Description |
+|---|---|
+| Source | Chain, token, and amount being sent |
+| Destination | Chain, token, and expected amount received |
+| Exchange Rate | The rate locked in for this transfer |
+| Platform Fee | 0.1% of the transfer amount |
+| Network Fees | Estimated gas costs on source and destination chains |
+| Estimated Time | Expected completion time (typically 10--60 seconds) |
+| Recipient | The destination wallet address |
+
+Review every field carefully. Once you click **Confirm Transfer**, goBlink will prompt your wallet to sign the transaction. The exchange rate is locked for 30 seconds from the moment you click Review -- if you take longer, the quote refreshes automatically.
+
+## Step 4: Sign the Transaction
+
+Your wallet will pop up with a transaction approval request. This is a standard on-chain transaction on the source chain. You are approving:
+
+1. **Token approval** (if this is your first time transferring this token) -- This grants goBlink's smart contract permission to move the specified amount. You can set an exact approval amount or unlimited approval, depending on your preference.
+2. **Transfer execution** -- The actual transaction that initiates the cross-chain swap through the 1Click protocol.
+
+If you are using a hardware wallet (Ledger, Trezor), make sure it is connected and unlocked before clicking Confirm.
+
+## Step 5: Track Your Transfer
+
+After signing, you are taken to the transfer tracking screen. Here you can monitor the progress in real time:
+
+- **Submitted** -- Your transaction has been broadcast to the source chain.
+- **Confirming** -- The source chain is processing block confirmations. The number of required confirmations varies by chain.
+- **Executing** -- The 1Click protocol is coordinating the cross-chain swap via NEAR Intents. A solver has picked up your intent and is fulfilling it.
+- **Completing** -- Tokens are being delivered to the destination chain.
+- **Done** -- The transfer is complete. The recipient's wallet now holds the destination tokens.
+
+You can safely close the browser during any stage. Your transfer continues regardless, and you can check its status anytime by visiting the **History** tab in the goBlink app.
+
+## Your Transfer History
+
+Every transfer you make is recorded in the **History** tab, accessible from the main navigation. Each entry shows:
+
+- Source and destination chain and token
+- Amount sent and amount received
+- Transaction hashes on both the source and destination chains (clickable links to block explorers)
+- Timestamp and completion time
+- Current status
+
+You can filter by chain, token, date range, or status. Export your history as a CSV file for accounting or tax reporting.
+
+## Tips for Your First Transfer
+
+- **Start small.** Send a minimal amount first to verify that everything works as expected before transferring larger sums.
+- **Double-check the recipient address.** Cross-chain transfers are irreversible. There is no way to recall tokens sent to the wrong address.
+- **Watch gas prices.** On chains like Ethereum, gas fees fluctuate significantly. goBlink shows you estimated fees before you confirm, but the actual cost depends on network conditions at the time your transaction is mined.
+- **Bookmark the tracking page.** If you need to share proof of a transfer, the tracking page URL contains everything the recipient needs to verify the payment.

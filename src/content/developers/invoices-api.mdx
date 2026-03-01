@@ -1,0 +1,408 @@
+---
+title: Invoices API
+description: Create, send, and manage crypto invoices with line items, tax calculations, and payment tracking through the goBlink API.
+---
+
+## Overview
+
+The Invoices API lets you create structured payment requests that you can send to customers via email or shareable link. Unlike one-time payments, invoices support line items, tax fields, memo notes, and due dates. They are ideal for freelancers, B2B billing, and any scenario where you need a formal, itemized payment request.
+
+**Base URL:** `https://merchant.goblink.io/api/v1`
+
+## Invoice Object
+
+```json
+{
+  "invoice_id": "inv_c3d4e5f6g7h8i9j0",
+  "status": "paid",
+  "invoice_number": "INV-2026-0042",
+  "amount": "1250.00",
+  "currency": "USD",
+  "customer_email": "client@example.com",
+  "customer_name": "Acme Corp",
+  "line_items": [
+    {
+      "description": "Web development - March 2026",
+      "quantity": 40,
+      "unit_price": "25.00",
+      "amount": "1000.00"
+    },
+    {
+      "description": "Hosting and infrastructure",
+      "quantity": 1,
+      "unit_price": "250.00",
+      "amount": "250.00"
+    }
+  ],
+  "subtotal": "1250.00",
+  "tax_rate": "0.00",
+  "tax_amount": "0.00",
+  "memo": "Payment due within 14 days. Thank you for your business.",
+  "due_date": "2026-03-15",
+  "invoice_url": "https://checkout.goblink.io/inv/inv_c3d4e5f6g7h8i9j0",
+  "payment_id": "pay_r1s2t3u4v5w6x7y8",
+  "metadata": {
+    "project": "website_redesign"
+  },
+  "paid_at": "2026-03-01T15:22:00Z",
+  "created_at": "2026-03-01T10:00:00Z"
+}
+```
+
+### Invoice Statuses
+
+| Status | Description |
+|--------|-------------|
+| `draft` | Invoice created but not yet sent or finalized. Can still be edited. |
+| `open` | Invoice finalized and ready for payment. Shareable link is active. |
+| `paid` | Customer has completed payment. |
+| `expired` | Invoice passed its due date without payment. |
+| `void` | Invoice was manually cancelled. |
+
+## Create an Invoice
+
+```
+POST /invoices
+```
+
+### Request Body
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `currency` | string | Yes | Three-letter ISO 4217 currency code (`USD`, `EUR`, `GBP`, `CAD`, `AUD`). |
+| `line_items` | array | Yes | Array of line item objects. At least one required. |
+| `line_items[].description` | string | Yes | Description of the line item. Max 200 characters. |
+| `line_items[].quantity` | number | Yes | Quantity. Must be greater than 0. |
+| `line_items[].unit_price` | string | Yes | Unit price as a decimal string. |
+| `customer_email` | string | No | Customer's email. If provided, goBlink sends the invoice via email. |
+| `customer_name` | string | No | Customer's name or company name. Displayed on the invoice. |
+| `invoice_number` | string | No | Custom invoice number. Auto-generated if omitted. Max 50 characters. |
+| `memo` | string | No | Free-text memo displayed on the invoice. Max 1000 characters. |
+| `due_date` | string | No | Due date in `YYYY-MM-DD` format. Defaults to 30 days from creation. |
+| `tax_rate` | string | No | Tax rate as a decimal (e.g., `"0.08"` for 8%). Default: `"0.00"`. |
+| `metadata` | object | No | Arbitrary key-value pairs for your internal use. |
+| `send_email` | boolean | No | Whether to email the invoice to the customer immediately. Default: `false`. |
+| `accepted_chains` | array | No | Restrict payment to specific chains. Default: all. |
+| `accepted_tokens` | array | No | Restrict payment to specific tokens. Default: all. |
+
+### Example Request
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/invoices \
+  -H "Authorization: Bearer gb_test_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currency": "USD",
+    "customer_email": "client@example.com",
+    "customer_name": "Acme Corp",
+    "invoice_number": "INV-2026-0042",
+    "line_items": [
+      {
+        "description": "Web development - March 2026",
+        "quantity": 40,
+        "unit_price": "25.00"
+      },
+      {
+        "description": "Hosting and infrastructure",
+        "quantity": 1,
+        "unit_price": "250.00"
+      }
+    ],
+    "tax_rate": "0.00",
+    "memo": "Payment due within 14 days. Thank you for your business.",
+    "due_date": "2026-03-15",
+    "send_email": true,
+    "metadata": {
+      "project": "website_redesign"
+    }
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "invoice_id": "inv_c3d4e5f6g7h8i9j0",
+    "status": "open",
+    "invoice_number": "INV-2026-0042",
+    "amount": "1250.00",
+    "currency": "USD",
+    "customer_email": "client@example.com",
+    "customer_name": "Acme Corp",
+    "line_items": [
+      {
+        "description": "Web development - March 2026",
+        "quantity": 40,
+        "unit_price": "25.00",
+        "amount": "1000.00"
+      },
+      {
+        "description": "Hosting and infrastructure",
+        "quantity": 1,
+        "unit_price": "250.00",
+        "amount": "250.00"
+      }
+    ],
+    "subtotal": "1250.00",
+    "tax_rate": "0.00",
+    "tax_amount": "0.00",
+    "memo": "Payment due within 14 days. Thank you for your business.",
+    "due_date": "2026-03-15",
+    "invoice_url": "https://checkout.goblink.io/inv/inv_c3d4e5f6g7h8i9j0",
+    "email_sent": true,
+    "metadata": {
+      "project": "website_redesign"
+    },
+    "created_at": "2026-03-01T10:00:00Z"
+  }
+}
+```
+
+## Retrieve an Invoice
+
+```
+GET /invoices/:invoice_id
+```
+
+### Example Request
+
+```bash
+curl https://merchant.goblink.io/api/v1/invoices/inv_c3d4e5f6g7h8i9j0 \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+### Example Response
+
+Returns the full Invoice object as shown above, including payment details if the invoice has been paid.
+
+## List Invoices
+
+```
+GET /invoices
+```
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `status` | string | all | Filter by status: `draft`, `open`, `paid`, `expired`, `void`. |
+| `limit` | integer | 20 | Number of results per page. Min: 1, Max: 100. |
+| `starting_after` | string | -- | Cursor for forward pagination. Pass the `invoice_id` of the last item. |
+| `customer_email` | string | -- | Filter invoices by customer email address. |
+| `created_gte` | string | -- | ISO 8601 timestamp. Only return invoices created on or after this time. |
+| `created_lte` | string | -- | ISO 8601 timestamp. Only return invoices created on or before this time. |
+
+### Example Request
+
+```bash
+curl "https://merchant.goblink.io/api/v1/invoices?status=open&limit=10" \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "invoice_id": "inv_c3d4e5f6g7h8i9j0",
+      "status": "open",
+      "invoice_number": "INV-2026-0042",
+      "amount": "1250.00",
+      "currency": "USD",
+      "customer_email": "client@example.com",
+      "customer_name": "Acme Corp",
+      "due_date": "2026-03-15",
+      "created_at": "2026-03-01T10:00:00Z"
+    },
+    {
+      "invoice_id": "inv_a9b8c7d6e5f4g3h2",
+      "status": "open",
+      "invoice_number": "INV-2026-0041",
+      "amount": "500.00",
+      "currency": "USD",
+      "customer_email": "vendor@example.com",
+      "customer_name": "Beta LLC",
+      "due_date": "2026-03-10",
+      "created_at": "2026-02-28T14:00:00Z"
+    }
+  ],
+  "has_more": false
+}
+```
+
+## Update an Invoice
+
+```
+PATCH /invoices/:invoice_id
+```
+
+Only invoices in `draft` status can be updated. Once an invoice is `open`, it is immutable. To change an open invoice, void it and create a new one.
+
+### Request Body
+
+Accepts the same fields as Create, except `send_email`. All fields are optional -- only include the fields you want to change.
+
+### Example Request
+
+```bash
+curl -X PATCH https://merchant.goblink.io/api/v1/invoices/inv_c3d4e5f6g7h8i9j0 \
+  -H "Authorization: Bearer gb_test_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "memo": "Updated memo: Net 30 terms apply.",
+    "due_date": "2026-03-31"
+  }'
+```
+
+## Finalize a Draft Invoice
+
+```
+POST /invoices/:invoice_id/finalize
+```
+
+Moves a `draft` invoice to `open` status, making it payable. Optionally sends an email to the customer.
+
+### Request Body
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `send_email` | boolean | No | Whether to email the invoice. Default: `false`. |
+
+### Example Request
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/invoices/inv_c3d4e5f6g7h8i9j0/finalize \
+  -H "Authorization: Bearer gb_test_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{ "send_email": true }'
+```
+
+## Void an Invoice
+
+```
+POST /invoices/:invoice_id/void
+```
+
+Cancels an open invoice. Voided invoices cannot be paid or reopened.
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/invoices/inv_c3d4e5f6g7h8i9j0/void \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "invoice_id": "inv_c3d4e5f6g7h8i9j0",
+    "status": "void",
+    "voided_at": "2026-03-01T16:00:00Z"
+  }
+}
+```
+
+## Send / Resend Invoice Email
+
+```
+POST /invoices/:invoice_id/send
+```
+
+Sends or resends the invoice email to the customer. The invoice must be in `open` status and have a `customer_email` set.
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/invoices/inv_c3d4e5f6g7h8i9j0/send \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+## Invoice Payment Flow
+
+When a customer opens the `invoice_url`, they see a branded invoice page showing:
+
+1. Your merchant name and logo.
+2. Line items with descriptions, quantities, and prices.
+3. Subtotal, tax, and total amount.
+4. Your memo text.
+5. A **Pay Now** button.
+
+Clicking **Pay Now** opens the standard goBlink checkout flow where the customer selects a chain and token. Once payment is confirmed, the invoice status changes to `paid` and an `invoice.paid` webhook event is fired.
+
+## Programmatic Invoice Generation
+
+Here is an example of generating monthly invoices for a SaaS application:
+
+### Node.js
+
+```javascript
+import { GoBlink } from "@goblink/sdk";
+
+const client = new GoBlink({ apiKey: process.env.GOBLINK_API_KEY });
+
+async function generateMonthlyInvoices(customers) {
+  for (const customer of customers) {
+    const invoice = await client.invoices.create({
+      currency: "USD",
+      customer_email: customer.email,
+      customer_name: customer.company,
+      invoice_number: `INV-${Date.now()}`,
+      line_items: [
+        {
+          description: `${customer.plan} plan - March 2026`,
+          quantity: 1,
+          unit_price: customer.monthlyRate,
+        },
+      ],
+      due_date: "2026-03-15",
+      memo: "Thank you for being a valued customer.",
+      metadata: {
+        customer_id: customer.id,
+        billing_period: "2026-03",
+      },
+    });
+
+    // Finalize and send
+    await client.invoices.finalize(invoice.invoice_id, {
+      send_email: true,
+    });
+
+    console.log(`Invoice ${invoice.invoice_number} sent to ${customer.email}`);
+  }
+}
+```
+
+### Python
+
+```python
+from goblink import GoBlink
+import os
+from datetime import date, timedelta
+
+client = GoBlink(api_key=os.environ["GOBLINK_API_KEY"])
+
+def generate_invoice(customer):
+    due = (date.today() + timedelta(days=14)).isoformat()
+
+    invoice = client.invoices.create(
+        currency="USD",
+        customer_email=customer["email"],
+        customer_name=customer["company"],
+        line_items=[
+            {
+                "description": f"{customer['plan']} plan - March 2026",
+                "quantity": 1,
+                "unit_price": customer["monthly_rate"],
+            }
+        ],
+        due_date=due,
+        memo="Thank you for being a valued customer.",
+        metadata={"customer_id": customer["id"]},
+    )
+
+    client.invoices.finalize(invoice["invoice_id"], send_email=True)
+    print(f"Invoice sent to {customer['email']}")
+```

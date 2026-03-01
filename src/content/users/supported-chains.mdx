@@ -1,0 +1,123 @@
+---
+title: Supported Chains and Tokens
+description: Complete reference of the 12 blockchains and tokens supported by goBlink for cross-chain transfers and payments.
+---
+
+## Supported Chains
+
+goBlink supports cross-chain transfers across 12 blockchains. You can send from any supported chain to any other supported chain in a single transaction.
+
+| Chain | Type | Native Token | Chain ID | Status |
+|---|---|---|---|---|
+| Ethereum | EVM (L1) | ETH | 1 | Live |
+| Polygon | EVM (L2) | POL | 137 | Live |
+| BNB Smart Chain | EVM (L1) | BNB | 56 | Live |
+| Arbitrum One | EVM (L2) | ETH | 42161 | Live |
+| Optimism | EVM (L2) | ETH | 10 | Live |
+| Base | EVM (L2) | ETH | 8453 | Live |
+| Avalanche C-Chain | EVM (L1) | AVAX | 43114 | Live |
+| NEAR | Non-EVM (L1) | NEAR | N/A | Live |
+| Solana | Non-EVM (L1) | SOL | N/A | Live |
+| Fantom | EVM (L1) | FTM | 250 | Live |
+| zkSync Era | EVM (L2) | ETH | 324 | Live |
+| Linea | EVM (L2) | ETH | 59144 | Live |
+
+## Supported Tokens
+
+goBlink supports hundreds of tokens across these chains. The following table lists the most commonly transferred tokens and their availability per chain.
+
+### Stablecoins
+
+| Token | Ethereum | Polygon | BSC | Arbitrum | Optimism | Base | Avalanche | NEAR | Solana | Fantom | zkSync | Linea |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| USDC | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| USDT | Yes | Yes | Yes | Yes | Yes | -- | Yes | Yes | Yes | Yes | Yes | Yes |
+| DAI | Yes | Yes | Yes | Yes | Yes | Yes | Yes | -- | -- | Yes | Yes | Yes |
+| BUSD | -- | -- | Yes | -- | -- | -- | -- | -- | -- | -- | -- | -- |
+
+### Major Assets
+
+| Token | Ethereum | Polygon | BSC | Arbitrum | Optimism | Base | Avalanche | NEAR | Solana | Fantom | zkSync | Linea |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| ETH / WETH | Yes | Yes | -- | Yes | Yes | Yes | -- | -- | -- | -- | Yes | Yes |
+| BTC / WBTC | Yes | Yes | Yes | Yes | Yes | Yes | Yes | -- | -- | -- | -- | -- |
+| SOL | -- | -- | -- | -- | -- | -- | -- | -- | Yes | -- | -- | -- |
+| NEAR | -- | -- | -- | -- | -- | -- | -- | Yes | -- | -- | -- | -- |
+| AVAX | -- | -- | -- | -- | -- | -- | Yes | -- | -- | -- | -- | -- |
+| BNB | -- | -- | Yes | -- | -- | -- | -- | -- | -- | -- | -- | -- |
+| MATIC / POL | -- | Yes | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
+| FTM | -- | -- | -- | -- | -- | -- | -- | -- | -- | Yes | -- | -- |
+
+### Adding Custom Tokens
+
+If a token is not listed in the default selector, you can add it manually by pasting its contract address. goBlink will:
+
+1. Verify the contract exists on the selected chain.
+2. Fetch the token name, symbol, and decimals.
+3. Check whether solver liquidity is available for that token.
+4. Display the token in your selector if liquidity is sufficient.
+
+Not all tokens have solver liquidity. If a token is verified but no solver can fulfill swaps for it, goBlink will display a "Low liquidity" warning and may not be able to complete transfers involving that token.
+
+## Transfer Limits
+
+goBlink enforces per-transaction limits that vary by chain and token. These limits exist to ensure solver liquidity can cover the transfer reliably.
+
+| Tier | Minimum Transfer | Maximum Transfer | Applies To |
+|---|---|---|---|
+| Stablecoins | $1.00 equivalent | $500,000 per transaction | USDC, USDT, DAI, BUSD |
+| Major tokens | $1.00 equivalent | $250,000 per transaction | ETH, BTC, SOL, NEAR, AVAX, BNB |
+| Other tokens | $1.00 equivalent | $50,000 per transaction | All other supported tokens |
+
+There is no daily or monthly volume cap for individual users. Merchants on the Business plan have higher per-transaction limits -- see the [Merchant Onboarding](/users/merchant/onboarding) page for details.
+
+## Network Fees
+
+Every cross-chain transfer involves gas fees on the source chain. goBlink estimates these fees before you confirm and displays them on the review screen. Destination chain gas is absorbed by the solver and reflected in the exchange rate you receive.
+
+### Typical Fee Ranges
+
+| Chain | Typical Transfer Fee | Notes |
+|---|---|---|
+| Ethereum | $2.00 -- $20.00 | Highly variable; depends on network congestion |
+| Polygon | $0.01 -- $0.05 | Consistently low fees |
+| BSC | $0.10 -- $0.30 | Low and stable |
+| Arbitrum | $0.05 -- $0.50 | Low fees thanks to L2 batching |
+| Optimism | $0.05 -- $0.50 | Similar to Arbitrum |
+| Base | $0.01 -- $0.10 | Among the lowest EVM fees |
+| Avalanche | $0.05 -- $0.25 | Predictable fee structure |
+| NEAR | < $0.01 | Negligible transaction costs |
+| Solana | < $0.01 | Negligible transaction costs |
+| Fantom | $0.01 -- $0.05 | Very low fees |
+| zkSync | $0.05 -- $0.25 | L2 rollup fees |
+| Linea | $0.05 -- $0.25 | L2 rollup fees |
+
+## Chain-Specific Notes
+
+### Ethereum
+
+Ethereum is the most widely supported chain but also the most expensive for gas. If you are sending from Ethereum and the amount is under $100, consider whether the gas fee makes the transfer economically sensible. For small transfers, using an L2 like Arbitrum, Base, or Optimism as the source chain is significantly cheaper.
+
+### NEAR
+
+NEAR uses a unique account model with human-readable addresses (e.g., `alice.near`) instead of hexadecimal addresses. When entering a NEAR destination address, use the full account name including the `.near` suffix. Sub-accounts (e.g., `wallet.alice.near`) are also supported.
+
+### Solana
+
+Solana uses base58-encoded addresses. When receiving tokens on Solana, the recipient wallet must have an associated token account for the incoming token. If the account does not exist, the solver creates it automatically, but this adds a small rent-exempt deposit (approximately 0.002 SOL) which is factored into the exchange rate.
+
+### L2 Rollups (Arbitrum, Optimism, Base, zkSync, Linea)
+
+These chains offer dramatically lower fees than Ethereum while inheriting its security. They are the best choice for cost-sensitive transfers. Note that withdrawals from L2 to Ethereum L1 can have longer finality times due to the rollup challenge period, but this does not affect goBlink transfers since the 1Click protocol handles settlement independently.
+
+## Upcoming Chains
+
+goBlink is actively working on adding support for additional chains. Chains under evaluation include:
+
+- Cosmos ecosystem (via IBC)
+- Sui
+- Aptos
+- Scroll
+- Mantle
+
+Follow the goBlink blog and Twitter for announcements about new chain support.

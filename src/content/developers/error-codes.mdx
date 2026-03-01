@@ -1,0 +1,209 @@
+---
+title: Error Codes
+description: Complete reference of goBlink API error codes, HTTP status codes, and troubleshooting guidance for common issues.
+---
+
+## Error Response Format
+
+When an API request fails, goBlink returns a JSON response with `success: false` and an `error` object containing a machine-readable code, a human-readable message, and the HTTP status code:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_AMOUNT",
+    "message": "Amount must be a positive decimal string.",
+    "status": 422,
+    "details": {
+      "field": "amount",
+      "provided": "-5.00"
+    }
+  }
+}
+```
+
+### Error Object Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `code` | string | Machine-readable error identifier. Use this for programmatic handling. |
+| `message` | string | Human-readable description of the error. |
+| `status` | integer | HTTP status code. |
+| `details` | object | Additional context about the error. Not always present. May include the field name, provided value, or constraints. |
+
+## HTTP Status Codes
+
+| Status | Meaning | When It Occurs |
+|--------|---------|----------------|
+| `200` | OK | Request succeeded. |
+| `201` | Created | Resource successfully created (e.g., new payment). |
+| `400` | Bad Request | Malformed JSON, missing required headers, or invalid request syntax. |
+| `401` | Unauthorized | Missing or invalid API key. |
+| `403` | Forbidden | API key is valid but lacks permission (e.g., IP not in allowlist). |
+| `404` | Not Found | The requested resource does not exist. |
+| `409` | Conflict | Idempotency key reused with different parameters, or duplicate `reference_id`. |
+| `422` | Unprocessable Entity | Request is well-formed but contains invalid field values. |
+| `429` | Too Many Requests | Rate limit exceeded. |
+| `500` | Internal Server Error | An unexpected error on goBlink's side. |
+
+## Error Codes Reference
+
+### Authentication Errors (401, 403)
+
+| Code | Status | Message | Resolution |
+|------|--------|---------|------------|
+| `UNAUTHORIZED` | 401 | Invalid or missing API key. | Check that the `Authorization` header is `Bearer <key>` with no extra whitespace. Verify the key has not been revoked. |
+| `KEY_REVOKED` | 401 | This API key has been revoked. | Generate a new API key in the dashboard. |
+| `KEY_ENVIRONMENT_MISMATCH` | 401 | Test key used for live resource (or vice versa). | Use a `gb_live_` key for live resources and `gb_test_` for test resources. |
+| `IP_NOT_ALLOWED` | 403 | Request IP address is not in the allowlist for this API key. | Add the requesting IP to the key's allowlist in the dashboard, or remove the allowlist. |
+| `ACCOUNT_SUSPENDED` | 403 | Merchant account has been suspended. | Contact support at `developers@goblink.io` to resolve account issues. |
+
+### Validation Errors (400, 422)
+
+| Code | Status | Message | Resolution |
+|------|--------|---------|------------|
+| `INVALID_JSON` | 400 | Request body is not valid JSON. | Ensure the `Content-Type` is `application/json` and the body is properly formatted JSON. |
+| `MISSING_REQUIRED_FIELD` | 422 | Required field `{field}` is missing. | Include all required fields in your request body. |
+| `INVALID_AMOUNT` | 422 | Amount must be a positive decimal string. | Provide the amount as a string like `"50.00"`. Must be greater than `0.00`. |
+| `AMOUNT_TOO_SMALL` | 422 | Amount is below the minimum of $0.50 USD. | Increase the amount to at least `"0.50"`. |
+| `AMOUNT_TOO_LARGE` | 422 | Amount exceeds the maximum of $100,000.00 USD. | Reduce the amount or contact support for higher limits. |
+| `INVALID_CURRENCY` | 422 | Unsupported currency `{currency}`. | Use one of: `USD`, `EUR`, `GBP`, `CAD`, `AUD`. |
+| `INVALID_CHAIN` | 422 | Unsupported chain `{chain}`. | Use a valid chain ID: `ethereum`, `polygon`, `arbitrum`, `optimism`, `base`, `solana`, `avalanche`, `bsc`. |
+| `INVALID_TOKEN` | 422 | Unsupported token `{token}`. | Use a supported token symbol: `ETH`, `USDC`, `USDT`, `DAI`, `SOL`, `MATIC`, `AVAX`, `BNB`, `BUSD`. |
+| `INVALID_URL` | 422 | The URL `{field}` is not a valid HTTPS URL. | Provide a fully qualified URL starting with `https://`. |
+| `INVALID_EMAIL` | 422 | Invalid email address format. | Provide a valid email address. |
+| `METADATA_TOO_LARGE` | 422 | Metadata exceeds the maximum of 20 keys or 500 characters per value. | Reduce the number of metadata keys or shorten values. |
+| `DESCRIPTION_TOO_LONG` | 422 | Description exceeds the maximum of 500 characters. | Shorten the description. |
+| `INVALID_EXPIRATION` | 422 | Expiration must be between 5 and 1440 minutes. | Set `expiration_minutes` to a value between 5 and 1440 (24 hours). |
+| `INVALID_LINE_ITEMS` | 422 | At least one line item is required. | Include at least one object in the `line_items` array. |
+| `INVALID_TAX_RATE` | 422 | Tax rate must be between 0 and 1 (e.g., 0.08 for 8%). | Provide a decimal between `"0.00"` and `"1.00"`. |
+| `INVALID_DUE_DATE` | 422 | Due date must be in the future and in YYYY-MM-DD format. | Provide a future date in ISO format. |
+
+### Resource Errors (404, 409)
+
+| Code | Status | Message | Resolution |
+|------|--------|---------|------------|
+| `PAYMENT_NOT_FOUND` | 404 | Payment `{payment_id}` not found. | Verify the payment ID is correct and belongs to your merchant account. |
+| `INVOICE_NOT_FOUND` | 404 | Invoice `{invoice_id}` not found. | Verify the invoice ID is correct. |
+| `REFUND_NOT_FOUND` | 404 | Refund `{refund_id}` not found. | Verify the refund ID is correct. |
+| `WEBHOOK_ENDPOINT_NOT_FOUND` | 404 | Webhook endpoint `{endpoint_id}` not found. | Verify the endpoint ID. |
+| `IDEMPOTENCY_CONFLICT` | 409 | Idempotency key already used with different parameters. | Use a new idempotency key or send the same parameters as the original request. |
+| `DUPLICATE_REFERENCE` | 409 | A payment with reference_id `{reference_id}` already exists. | Each `reference_id` must be unique per merchant. Use a different value or omit the field. |
+
+### Payment State Errors (409, 422)
+
+| Code | Status | Message | Resolution |
+|------|--------|---------|------------|
+| `PAYMENT_ALREADY_COMPLETED` | 409 | This payment has already been completed. | No action needed. The payment was already processed. |
+| `PAYMENT_EXPIRED` | 409 | This payment has expired. | Create a new payment. |
+| `PAYMENT_NOT_REFUNDABLE` | 422 | Only completed payments can be refunded. | Wait for the payment to reach `completed` status before issuing a refund. |
+| `REFUND_EXCEEDS_AMOUNT` | 422 | Refund amount exceeds the remaining refundable amount. | Reduce the refund amount. The maximum is the original payment amount minus any prior refunds. |
+| `INVOICE_NOT_EDITABLE` | 409 | Only draft invoices can be edited. | Void the current invoice and create a new one. |
+| `INVOICE_ALREADY_PAID` | 409 | This invoice has already been paid. | No action needed. |
+| `INVOICE_ALREADY_VOID` | 409 | This invoice has already been voided. | Create a new invoice if needed. |
+
+### Rate Limit Errors (429)
+
+| Code | Status | Message | Resolution |
+|------|--------|---------|------------|
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests. Please retry after `{seconds}` seconds. | Wait for the number of seconds indicated in the `Retry-After` header, then retry. Implement exponential backoff. |
+
+### Server Errors (500)
+
+| Code | Status | Message | Resolution |
+|------|--------|---------|------------|
+| `INTERNAL_ERROR` | 500 | An unexpected error occurred. Please try again later. | Retry the request. If the error persists, contact support with the `X-Request-Id` header value from the response. |
+| `SERVICE_UNAVAILABLE` | 503 | The service is temporarily unavailable. | Retry after a brief delay. Check [status.goblink.io](https://status.goblink.io) for outage information. |
+
+## Handling Errors in Code
+
+### Node.js
+
+```javascript
+const response = await fetch("https://merchant.goblink.io/api/v1/payments", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ amount: "-5.00", currency: "USD" }),
+});
+
+const result = await response.json();
+
+if (!result.success) {
+  const { code, message, status, details } = result.error;
+
+  switch (code) {
+    case "INVALID_AMOUNT":
+      console.error(`Invalid amount: ${details?.provided}`);
+      break;
+    case "RATE_LIMIT_EXCEEDED":
+      const retryAfter = response.headers.get("Retry-After");
+      console.warn(`Rate limited. Retrying in ${retryAfter}s`);
+      break;
+    case "UNAUTHORIZED":
+      console.error("Check your API key configuration.");
+      break;
+    default:
+      console.error(`API error [${code}]: ${message}`);
+  }
+}
+```
+
+### Python
+
+```python
+import requests
+
+response = requests.post(
+    "https://merchant.goblink.io/api/v1/payments",
+    headers={
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    },
+    json={"amount": "-5.00", "currency": "USD"},
+)
+
+result = response.json()
+
+if not result["success"]:
+    error = result["error"]
+    code = error["code"]
+    message = error["message"]
+
+    if code == "INVALID_AMOUNT":
+        print(f"Invalid amount: {error.get('details', {}).get('provided')}")
+    elif code == "RATE_LIMIT_EXCEEDED":
+        retry_after = response.headers.get("Retry-After", "5")
+        print(f"Rate limited. Retry after {retry_after}s")
+    elif code == "UNAUTHORIZED":
+        print("Check your API key configuration.")
+    else:
+        print(f"API error [{code}]: {message}")
+```
+
+## Debugging Tips
+
+### Include Request IDs
+
+Every API response includes an `X-Request-Id` header. Include this when contacting support:
+
+```bash
+curl -v https://merchant.goblink.io/api/v1/payments/pay_invalid \
+  -H "Authorization: Bearer gb_test_your_key"
+
+# Response headers will include:
+# X-Request-Id: req_8a7b6c5d4e3f2a1b
+```
+
+### Common Mistakes
+
+| Mistake | Symptom | Fix |
+|---------|---------|-----|
+| Using secret key in browser | Key exposed in DevTools | Use a publishable key (`gb_pub_`) for client-side code. |
+| Sending amount as number | `INVALID_AMOUNT` error | Send amount as a string: `"50.00"` not `50.00`. |
+| Missing Content-Type header | `INVALID_JSON` error | Add `Content-Type: application/json` to POST/PATCH requests. |
+| Using HTTP instead of HTTPS | Connection refused | Always use `https://` for the API base URL. |
+| Expired payment operations | `PAYMENT_EXPIRED` error | Create a new payment instead of retrying the expired one. |
+| Double-refunding | `REFUND_EXCEEDS_AMOUNT` | Track refund state in your database to prevent duplicate requests. |

@@ -1,0 +1,345 @@
+---
+title: Payments API
+description: Complete reference for creating, retrieving, listing, and managing payments through the goBlink Merchant API.
+---
+
+## Overview
+
+The Payments API is the core of goBlink's merchant integration. Use it to create payment requests, check their status, and issue refunds. Each payment generates a hosted checkout page where your customer selects their preferred chain and token.
+
+**Base URL:** `https://merchant.goblink.io/api/v1`
+
+## Payment Object
+
+A Payment object has the following structure:
+
+```json
+{
+  "payment_id": "pay_9f8a7b6c5d4e3f2a",
+  "status": "completed",
+  "amount": "50.00",
+  "currency": "USD",
+  "description": "Pro plan subscription",
+  "checkout_url": "https://checkout.goblink.io/pay_9f8a7b6c5d4e3f2a",
+  "chain": "ethereum",
+  "token": "USDC",
+  "tx_hash": "0xabc123def456789...",
+  "payer_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
+  "metadata": {
+    "order_id": "order_12345",
+    "customer_email": "alice@example.com"
+  },
+  "redirect_url": "https://yoursite.com/success",
+  "cancel_url": "https://yoursite.com/cancel",
+  "expires_at": "2026-03-01T13:30:00Z",
+  "completed_at": "2026-03-01T13:04:12Z",
+  "created_at": "2026-03-01T13:00:00Z"
+}
+```
+
+### Payment Statuses
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Payment created. Waiting for customer to initiate a transaction. |
+| `processing` | On-chain transaction detected. Waiting for confirmations. |
+| `completed` | Payment confirmed on-chain and settled. |
+| `failed` | Transaction failed or was rejected. |
+| `expired` | Customer did not pay before the `expires_at` deadline. |
+| `refunded` | Payment was fully refunded. |
+| `partially_refunded` | A partial refund has been issued. |
+
+## Create a Payment
+
+```
+POST /payments
+```
+
+Creates a new payment and returns a checkout URL for the customer.
+
+### Request Body
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `amount` | string | Yes | Payment amount as a decimal string (e.g., `"50.00"`). |
+| `currency` | string | Yes | Three-letter ISO 4217 currency code. Supported: `USD`, `EUR`, `GBP`, `CAD`, `AUD`. |
+| `description` | string | No | Human-readable description shown on the checkout page. Max 500 characters. |
+| `metadata` | object | No | Arbitrary key-value pairs for your internal use. Max 20 keys, 500 chars per value. |
+| `redirect_url` | string | No | URL to redirect the customer after successful payment. |
+| `cancel_url` | string | No | URL to redirect the customer if they cancel. |
+| `expiration_minutes` | integer | No | Minutes until the payment expires. Default: `30`. Min: `5`. Max: `1440`. |
+| `accepted_chains` | array | No | Restrict payment to specific chains (e.g., `["ethereum", "polygon"]`). Default: all chains. |
+| `accepted_tokens` | array | No | Restrict payment to specific tokens (e.g., `["USDC", "USDT"]`). Default: all tokens. |
+| `customer_email` | string | No | Pre-fill the customer's email on the checkout page. |
+| `reference_id` | string | No | Your own unique reference ID. Must be unique per merchant. Max 128 characters. |
+
+### Example Request
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/payments \
+  -H "Authorization: Bearer gb_test_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "99.99",
+    "currency": "USD",
+    "description": "Annual Pro subscription",
+    "metadata": {
+      "plan": "pro_annual",
+      "user_id": "usr_8473"
+    },
+    "redirect_url": "https://app.example.com/billing/success",
+    "cancel_url": "https://app.example.com/billing/cancel",
+    "accepted_chains": ["ethereum", "polygon", "base"],
+    "accepted_tokens": ["USDC"],
+    "customer_email": "alice@example.com",
+    "reference_id": "sub_renewal_2026_03"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": "pay_a1b2c3d4e5f6g7h8",
+    "status": "pending",
+    "amount": "99.99",
+    "currency": "USD",
+    "description": "Annual Pro subscription",
+    "checkout_url": "https://checkout.goblink.io/pay_a1b2c3d4e5f6g7h8",
+    "metadata": {
+      "plan": "pro_annual",
+      "user_id": "usr_8473"
+    },
+    "redirect_url": "https://app.example.com/billing/success",
+    "cancel_url": "https://app.example.com/billing/cancel",
+    "accepted_chains": ["ethereum", "polygon", "base"],
+    "accepted_tokens": ["USDC"],
+    "customer_email": "alice@example.com",
+    "reference_id": "sub_renewal_2026_03",
+    "expires_at": "2026-03-01T13:30:00Z",
+    "created_at": "2026-03-01T13:00:00Z"
+  }
+}
+```
+
+## Retrieve a Payment
+
+```
+GET /payments/:payment_id
+```
+
+Fetches the current state of a payment.
+
+### Path Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `payment_id` | string | The unique payment identifier (e.g., `pay_a1b2c3d4e5f6g7h8`). |
+
+### Example Request
+
+```bash
+curl https://merchant.goblink.io/api/v1/payments/pay_a1b2c3d4e5f6g7h8 \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "payment_id": "pay_a1b2c3d4e5f6g7h8",
+    "status": "completed",
+    "amount": "99.99",
+    "currency": "USD",
+    "description": "Annual Pro subscription",
+    "chain": "polygon",
+    "token": "USDC",
+    "token_amount": "99.990000",
+    "tx_hash": "0x7d3f8c...e2a1b0",
+    "payer_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
+    "checkout_url": "https://checkout.goblink.io/pay_a1b2c3d4e5f6g7h8",
+    "metadata": {
+      "plan": "pro_annual",
+      "user_id": "usr_8473"
+    },
+    "reference_id": "sub_renewal_2026_03",
+    "completed_at": "2026-03-01T13:03:47Z",
+    "created_at": "2026-03-01T13:00:00Z"
+  }
+}
+```
+
+## List Payments
+
+```
+GET /payments
+```
+
+Returns a paginated list of payments for your merchant account.
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `status` | string | all | Filter by status: `pending`, `processing`, `completed`, `failed`, `expired`, `refunded`. |
+| `limit` | integer | 20 | Number of results per page. Min: 1, Max: 100. |
+| `starting_after` | string | -- | Cursor for forward pagination. Pass the `payment_id` of the last item in the previous page. |
+| `ending_before` | string | -- | Cursor for backward pagination. Pass the `payment_id` of the first item in the previous page. |
+| `created_gte` | string | -- | ISO 8601 timestamp. Only return payments created on or after this time. |
+| `created_lte` | string | -- | ISO 8601 timestamp. Only return payments created on or before this time. |
+| `reference_id` | string | -- | Filter by your custom reference ID. |
+
+### Example Request
+
+```bash
+curl "https://merchant.goblink.io/api/v1/payments?status=completed&limit=10&created_gte=2026-02-01T00:00:00Z" \
+  -H "Authorization: Bearer gb_test_your_api_key_here"
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "payment_id": "pay_a1b2c3d4e5f6g7h8",
+      "status": "completed",
+      "amount": "99.99",
+      "currency": "USD",
+      "chain": "polygon",
+      "token": "USDC",
+      "created_at": "2026-03-01T13:00:00Z"
+    },
+    {
+      "payment_id": "pay_z9y8x7w6v5u4t3s2",
+      "status": "completed",
+      "amount": "25.00",
+      "currency": "USD",
+      "chain": "base",
+      "token": "USDC",
+      "created_at": "2026-02-28T09:15:00Z"
+    }
+  ],
+  "has_more": true
+}
+```
+
+## Create a Refund
+
+```
+POST /refunds
+```
+
+Issues a full or partial refund for a completed payment. Refunds are processed on the same chain and token the customer originally used to pay.
+
+### Request Body
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `payment_id` | string | Yes | The ID of the payment to refund. |
+| `amount` | string | No | Amount to refund. Omit for a full refund. Must be less than or equal to the original payment amount minus any previous refunds. |
+| `reason` | string | No | Reason for the refund. Visible to the customer. Max 500 characters. |
+
+### Example Request
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/refunds \
+  -H "Authorization: Bearer gb_test_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "payment_id": "pay_a1b2c3d4e5f6g7h8",
+    "amount": "25.00",
+    "reason": "Customer requested partial refund"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "refund_id": "ref_m1n2o3p4q5r6s7t8",
+    "payment_id": "pay_a1b2c3d4e5f6g7h8",
+    "status": "processing",
+    "amount": "25.00",
+    "currency": "USD",
+    "chain": "polygon",
+    "token": "USDC",
+    "reason": "Customer requested partial refund",
+    "created_at": "2026-03-01T14:00:00Z"
+  }
+}
+```
+
+### Refund Statuses
+
+| Status | Description |
+|--------|-------------|
+| `processing` | Refund initiated. Transaction is being submitted on-chain. |
+| `completed` | Refund transaction confirmed. Funds returned to the payer address. |
+| `failed` | Refund transaction failed. Contact support for resolution. |
+
+## Idempotency
+
+The Payments API supports idempotent requests. Pass an `Idempotency-Key` header to safely retry requests without creating duplicate payments:
+
+```bash
+curl -X POST https://merchant.goblink.io/api/v1/payments \
+  -H "Authorization: Bearer gb_test_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: order_12345_attempt_1" \
+  -d '{
+    "amount": "50.00",
+    "currency": "USD"
+  }'
+```
+
+Idempotency keys are valid for 24 hours. If you send the same key with the same request body within that window, the API returns the original response without creating a new payment. If you send the same key with a different body, you receive a `409 Conflict` error.
+
+## Pagination
+
+List endpoints use cursor-based pagination. Each response includes a `has_more` boolean. When `has_more` is `true`, pass the last item's ID as `starting_after` to fetch the next page:
+
+```javascript
+let allPayments = [];
+let hasMore = true;
+let cursor = undefined;
+
+while (hasMore) {
+  const url = new URL("https://merchant.goblink.io/api/v1/payments");
+  url.searchParams.set("limit", "100");
+  url.searchParams.set("status", "completed");
+  if (cursor) url.searchParams.set("starting_after", cursor);
+
+  const response = await fetch(url.toString(), {
+    headers: { "Authorization": `Bearer ${apiKey}` },
+  });
+  const result = await response.json();
+
+  allPayments.push(...result.data);
+  hasMore = result.has_more;
+  cursor = result.data[result.data.length - 1]?.payment_id;
+}
+
+console.log(`Fetched ${allPayments.length} completed payments`);
+```
+
+## Test Mode Amounts
+
+When using a test API key, you can trigger specific payment outcomes with these amounts:
+
+| Amount | Outcome |
+|--------|---------|
+| `0.01` | Payment succeeds immediately. |
+| `6.66` | Payment fails with `TRANSACTION_FAILED`. |
+| `4.04` | Payment expires (simulates no customer action). |
+| `4.09` | Payment triggers a `409 Conflict` (duplicate reference). |
+| `5.00` | Payment succeeds after a 30-second delay (simulates slow confirmation). |
+
+All other amounts in test mode succeed with a 2-3 second simulated confirmation delay.

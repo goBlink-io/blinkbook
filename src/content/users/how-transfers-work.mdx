@@ -1,0 +1,129 @@
+---
+title: How Cross-Chain Transfers Work
+description: A detailed look at how goBlink uses 1Click and NEAR Intents to execute atomic cross-chain swaps across 12 blockchains.
+---
+
+## Overview
+
+When you initiate a transfer on goBlink, a lot happens behind the scenes in a very short window of time. What feels like a single action -- "send USDC from Ethereum to SOL on Solana" -- actually involves multiple coordinated steps across different blockchains, all orchestrated by the 1Click protocol and NEAR Intents.
+
+This page explains the full lifecycle of a goBlink transfer so you understand exactly what happens to your tokens at each stage.
+
+## The Intent Model
+
+Traditional cross-chain bridges work by locking tokens on one chain and minting wrapped tokens on another. This approach has well-known drawbacks: fragmented liquidity, wrapped token risk, and slow finality.
+
+goBlink takes a fundamentally different approach using **intents**. Instead of prescribing a specific execution path, you express *what you want to happen*:
+
+- "I want to send 500 USDC on Arbitrum and have the recipient receive MATIC on Polygon."
+
+This intent is a signed message that gets submitted to the NEAR Intents protocol. The protocol does not dictate *how* the swap happens -- it opens a competitive market where solvers bid to fulfill your intent.
+
+### What Is an Intent?
+
+An intent is a structured, signed message containing:
+
+- **Source chain and token** -- Where the tokens are coming from.
+- **Source amount** -- How many tokens you are sending.
+- **Destination chain and token** -- Where and what the recipient should receive.
+- **Minimum destination amount** -- The worst acceptable exchange rate. goBlink sets this based on the quoted rate minus a small slippage tolerance.
+- **Recipient address** -- The wallet that should receive the destination tokens.
+- **Expiration** -- A timestamp after which the intent is no longer valid (typically 5 minutes from creation).
+
+## Step-by-Step Transfer Flow
+
+### 1. Quote and Rate Lock
+
+When you enter transfer details on goBlink, the platform queries multiple solver endpoints to find the best available rate. The quoted rate accounts for:
+
+- Current DEX liquidity on both the source and destination chains
+- Network fees on both chains
+- The goBlink platform fee (0.1%)
+
+The rate is locked for 30 seconds. If you confirm within that window, you get the quoted rate. If not, a fresh quote is generated.
+
+### 2. Intent Creation and Signing
+
+When you click **Confirm Transfer**, goBlink constructs an intent object and prompts your wallet to sign it. This signature proves that you authorized the transfer without revealing your private key.
+
+The signed intent is submitted to the NEAR Intents protocol, where it becomes visible to the solver network.
+
+### 3. Token Escrow on Source Chain
+
+Simultaneously, a transaction is broadcast to the source chain that moves your tokens into a goBlink escrow contract. These tokens are locked in the contract and can only be released in two ways:
+
+- **To a solver** who fulfills the intent on the destination chain (the happy path).
+- **Back to you** if the intent expires without being fulfilled (the refund path).
+
+This is what makes goBlink non-custodial. Your tokens sit in a transparent, auditable smart contract -- not in a goBlink-controlled wallet.
+
+### 4. Solver Competition
+
+Once the intent is live and the source tokens are escrowed, solvers compete to fulfill it. A solver is an automated agent that maintains liquidity across multiple chains. When a solver picks up your intent, it:
+
+1. Verifies the source tokens are escrowed and the intent signature is valid.
+2. Calculates whether it can profitably fulfill the intent at the specified minimum destination amount.
+3. Submits a fulfillment transaction on the destination chain, delivering the destination tokens to the recipient address.
+
+Multiple solvers may bid on the same intent. The NEAR Intents protocol ensures only one solver can fulfill it, and it selects the one offering the best rate for the user.
+
+### 5. Destination Delivery
+
+The winning solver sends the destination tokens directly to the recipient's wallet on the destination chain. This is a standard token transfer on the destination chain -- the recipient sees incoming tokens just like any other transfer.
+
+### 6. Settlement and Proof
+
+After the destination delivery is confirmed (based on the destination chain's finality requirements), the solver submits a proof of fulfillment to the NEAR Intents protocol. This proof is verified on-chain, and the escrowed source tokens are released to the solver.
+
+The entire cycle -- from signing to destination delivery -- typically completes in 10 to 60 seconds.
+
+## What Happens If Something Goes Wrong
+
+### Solver Fails to Fulfill
+
+If no solver fulfills your intent before the expiration window (5 minutes), the escrowed tokens are automatically returned to your wallet on the source chain. You pay only the gas fee for the original escrow transaction.
+
+### Destination Chain Congestion
+
+If the destination chain is congested, the solver's fulfillment transaction may take longer than usual to confirm. goBlink monitors this and updates the tracking screen in real time. The intent expiration is long enough to accommodate typical congestion delays.
+
+### Partial Fills
+
+goBlink does not support partial fills. Either the full intent is fulfilled or none of it is. This prevents you from ending up with a fraction of your expected tokens.
+
+## Fee Structure
+
+| Fee Type | Amount | Paid By | When |
+|---|---|---|---|
+| Platform fee | 0.1% of transfer amount | Sender | Deducted from source amount |
+| Source chain gas | Varies by chain | Sender | Paid in source chain native token |
+| Destination chain gas | Varies by chain | Solver (absorbed into rate) | Included in exchange rate |
+| Slippage tolerance | 0.5% default (adjustable) | N/A | Only applied if market moves against you |
+
+## Finality Times by Chain
+
+Different chains have different finality characteristics, which affect how quickly goBlink can confirm each stage of the transfer.
+
+| Chain | Typical Block Time | Confirmations Required | Estimated Finality |
+|---|---|---|---|
+| Ethereum | 12 seconds | 12 blocks | ~2.5 minutes |
+| Polygon | 2 seconds | 32 blocks | ~1 minute |
+| BSC | 3 seconds | 15 blocks | ~45 seconds |
+| Arbitrum | 0.25 seconds | 1 block | ~1 second |
+| Optimism | 2 seconds | 1 block | ~2 seconds |
+| Base | 2 seconds | 1 block | ~2 seconds |
+| Avalanche | 2 seconds | 1 block | ~2 seconds |
+| NEAR | 1 second | 3 blocks | ~3 seconds |
+| Solana | 0.4 seconds | 32 slots | ~13 seconds |
+| Fantom | 1 second | 1 block | ~1 second |
+| zkSync | 1 second | 1 block | ~1 second |
+| Linea | 2 seconds | 1 block | ~2 seconds |
+
+Note: These are approximate values under normal network conditions. Congestion can increase finality times, particularly on Ethereum.
+
+## Security Guarantees
+
+- **Atomic execution.** The swap either completes fully or not at all. You will never lose tokens to a half-completed transfer.
+- **Non-custodial escrow.** Escrowed tokens are held in audited smart contracts, not in any goBlink-controlled wallet.
+- **Time-limited intents.** Every intent has an expiration. If unfulfilled, your tokens return to you automatically.
+- **On-chain verification.** Solver fulfillment is proven and verified on-chain before source tokens are released. A solver cannot claim your escrowed tokens without delivering the destination tokens first.
