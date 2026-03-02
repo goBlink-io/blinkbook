@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const createPageSchema = z.object({
   title: z.string().min(1).max(200).optional().default('Untitled'),
-  slug: z.string().min(1).max(200).regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/),
+  slug: z.string().min(1).max(200).regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/).optional(),
   content: z.object({
     type: z.literal('doc'),
     content: z.array(z.any()),
@@ -69,7 +69,10 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid data', details: parsed.error.issues }, { status: 400 });
   }
 
-  const { title, slug, content, parent_id, position, is_published } = parsed.data;
+  const { title, content, parent_id, position, is_published } = parsed.data;
+
+  // Auto-generate slug from title if not provided
+  const slug = parsed.data.slug ?? (title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'untitled');
 
   // Get next position if not provided
   let pos = position;
