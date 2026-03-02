@@ -269,7 +269,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between h-14 px-6">
           <Link href="/" className="text-lg font-bold tracking-tight">
             <span className="bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">
-              BlinkBook
+              goBlink Book
             </span>
           </Link>
           <div className="hidden sm:flex items-center gap-6 text-sm text-zinc-400">
@@ -345,7 +345,7 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-zinc-700" />
                 <div className="w-3 h-3 rounded-full bg-zinc-700" />
               </div>
-              <span className="text-xs text-zinc-500 ml-2">my-docs.blinkbook.goblink.io</span>
+              <span className="text-xs text-zinc-500 ml-2">my-docs.book.goblink.io</span>
             </div>
             {/* Editor body */}
             <div className="flex min-h-[280px]">
@@ -557,7 +557,7 @@ export default function LandingPage() {
                       <span className="text-blue-300">sdk</span>{" "}
                       <span className="text-zinc-500">=</span>{" "}
                       <span className="text-yellow-300">new</span>{" "}
-                      <span className="text-green-400">BlinkBook</span>
+                      <span className="text-green-400">goBlink Book</span>
                       <span className="text-zinc-400">()</span>
                     </div>
                   </div>
@@ -593,7 +593,7 @@ export default function LandingPage() {
       <section className="max-w-5xl mx-auto px-6 py-24 sm:py-32">
         <Section>
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-3">
-            How BlinkBook compares
+            How goBlink Book compares
           </h2>
           <p className="text-zinc-400 text-center mb-12 max-w-xl mx-auto">
             The best of hosted and self-hosted, without the trade-offs.
@@ -609,7 +609,7 @@ export default function LandingPage() {
                   </th>
                   <th className="px-5 py-4 font-semibold text-center">
                     <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
-                      BlinkBook
+                      goBlink Book
                     </span>
                   </th>
                   <th className="px-5 py-4 font-semibold text-zinc-500 text-center">GitBook</th>
@@ -724,7 +724,7 @@ export default function LandingPage() {
             Ready to ship better docs?
           </h2>
           <p className="text-lg text-zinc-400 mb-10 max-w-xl mx-auto">
-            Join BlinkBook and get your documentation live in minutes. Free to start, no credit card required.
+            Join goBlink Book and get your documentation live in minutes. Free to start, no credit card required.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -750,7 +750,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <span className="text-sm font-semibold bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">
-                BlinkBook
+                goBlink Book
               </span>
               <span className="text-sm text-zinc-600 ml-2">
                 A{" "}
