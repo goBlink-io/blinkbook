@@ -121,7 +121,7 @@ function renderNode(node: TiptapNode): string {
   }
 }
 
-function getPlainText(node: TiptapNode): string {
+export function getPlainText(node: TiptapNode): string {
   if (node.text) return node.text;
   return node.content?.map(getPlainText).join('') ?? '';
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { BookOpen, Menu } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
+import { PublishedSearch } from './published-search';
 import type { BBSpace, BBPage } from '@/types/database';
 
 interface NavItem {
@@ -120,6 +121,7 @@ export function PublishedLayout({
             )}
             <span className="text-sm font-bold text-white">{space.name}</span>
           </Link>
+          <PublishedSearch spaceSlug={space.slug} />
         </div>
       </header>
 
