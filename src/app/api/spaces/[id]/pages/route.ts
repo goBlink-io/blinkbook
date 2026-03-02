@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { enforceLimit, getRequiredPlan } from '@/lib/billing/check-plan';
 import { z } from 'zod';
 
 const createPageSchema = z.object({
@@ -60,6 +61,15 @@ export async function POST(
 
   if (!space) {
     return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+  }
+
+  // Check plan limits
+  const canCreate = await enforceLimit(user.id, 'pages');
+  if (!canCreate) {
+    return NextResponse.json(
+      { error: 'upgrade_required', plan: getRequiredPlan('pages') },
+      { status: 402 }
+    );
   }
 
   const body = await request.json();

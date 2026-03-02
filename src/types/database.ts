@@ -61,12 +61,32 @@ export interface TiptapMark {
   attrs?: Record<string, unknown>;
 }
 
+export interface BBSubscription {
+  id: string;
+  user_id: string;
+  plan: 'free' | 'pro' | 'team';
+  status: 'active' | 'canceled' | 'past_due' | 'trialing';
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  goblink_payment_id: string | null;
+  payment_method: 'stripe' | 'crypto' | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BBTeamMember {
   id: string;
   space_id: string;
-  user_id: string;
+  user_id: string | null;
+  email: string | null;
   role: 'admin' | 'editor' | 'viewer';
-  created_at: string;
+  status: 'pending' | 'accepted';
+  invite_token: string | null;
+  invited_at: string;
+  accepted_at: string | null;
 }
 
 export interface BBFeedback {

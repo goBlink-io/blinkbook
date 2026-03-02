@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { enforceLimit, getRequiredPlan } from '@/lib/billing/check-plan';
 import { z } from 'zod';
 
 const createSpaceSchema = z.object({
@@ -53,6 +54,15 @@ export async function POST(request: Request) {
   }
 
   const { name, slug, description, theme } = parsed.data;
+
+  // Check plan limits
+  const canCreate = await enforceLimit(user.id, 'spaces');
+  if (!canCreate) {
+    return NextResponse.json(
+      { error: 'upgrade_required', plan: getRequiredPlan('spaces') },
+      { status: 402 }
+    );
+  }
 
   // Check slug uniqueness
   const { data: existing } = await supabase
