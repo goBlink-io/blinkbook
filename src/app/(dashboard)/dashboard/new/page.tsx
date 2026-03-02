@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
 const themePresets = [
@@ -33,12 +33,23 @@ function slugify(text: string): string {
     .slice(0, 63);
 }
 
+function pageSlugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 100) || 'introduction';
+}
+
 export default function NewSpacePage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [selectedTheme, setSelectedTheme] = useState('midnight');
+  const [firstPageTitle, setFirstPageTitle] = useState('Introduction');
   const [creating, setCreating] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [createdSpaceId, setCreatedSpaceId] = useState('');
+  const [createdPageId, setCreatedPageId] = useState('');
 
   const {
     register,
@@ -74,6 +85,7 @@ export default function NewSpacePage() {
     setServerError('');
 
     try {
+      // 1. Create the space
       const res = await fetch('/api/spaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -92,13 +104,41 @@ export default function NewSpacePage() {
         return;
       }
 
-      const { id } = await res.json();
-      router.push(`/dashboard/${id}`);
+      const { id: spaceId } = await res.json();
+
+      // 2. Create the first page
+      const pageTitle = firstPageTitle.trim() || 'Introduction';
+      const pageRes = await fetch(`/api/spaces/${spaceId}/pages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: pageTitle,
+          slug: pageSlugify(pageTitle),
+        }),
+      });
+
+      if (!pageRes.ok) {
+        // Space was created but page failed — still continue to done screen
+        setCreatedSpaceId(spaceId);
+        setCreatedPageId('');
+        setStep(4);
+        setCreating(false);
+        return;
+      }
+
+      const { id: pageId } = await pageRes.json();
+
+      setCreatedSpaceId(spaceId);
+      setCreatedPageId(pageId);
+      setStep(4);
     } catch {
       setServerError('Something went wrong. Please try again.');
+    } finally {
       setCreating(false);
     }
   };
+
+  const stepLabels = ['Name & Slug', 'Theme', 'First Page', 'Done'];
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -112,25 +152,26 @@ export default function NewSpacePage() {
 
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-8">
-        {[1, 2, 3].map((s) => (
+        {[1, 2, 3, 4].map((s) => (
           <div key={s} className="flex items-center gap-2">
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
                 s < step
                   ? 'bg-blue-600 text-white'
                   : s === step
                   ? 'bg-zinc-800 text-white border-2 border-blue-500'
                   : 'bg-zinc-800 text-zinc-500'
               }`}
+              title={stepLabels[s - 1]}
             >
               {s < step ? <Check className="w-4 h-4" /> : s}
             </div>
-            {s < 3 && <div className={`w-12 h-0.5 ${s < step ? 'bg-blue-600' : 'bg-zinc-800'}`} />}
+            {s < 4 && <div className={`w-10 h-0.5 transition-colors ${s < step ? 'bg-blue-600' : 'bg-zinc-800'}`} />}
           </div>
         ))}
       </div>
 
-      {/* Step 1: Name */}
+      {/* Step 1: Name & Slug */}
       {step === 1 && (
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">Name your site</h1>
@@ -171,6 +212,11 @@ export default function NewSpacePage() {
                   .blinkbook.goblink.io
                 </div>
               </div>
+              {slugValue && (
+                <p className="text-xs text-zinc-500 mt-1.5">
+                  Your site will be available at <span className="text-zinc-300">{slugValue}.blinkbook.goblink.io</span>
+                </p>
+              )}
               {errors.slug && (
                 <p className="text-sm text-red-400 mt-1">{errors.slug.message}</p>
               )}
@@ -223,10 +269,9 @@ export default function NewSpacePage() {
               >
                 <p className="text-sm font-medium text-white mb-3">{theme.name}</p>
                 <div className="flex gap-1.5">
-                  <div className="w-6 h-6 rounded-full border border-zinc-700" style={{ background: theme.colors.primary }} />
-                  <div className="w-6 h-6 rounded-full border border-zinc-700" style={{ background: theme.colors.secondary }} />
-                  <div className="w-6 h-6 rounded-full border border-zinc-700" style={{ background: theme.colors.bg }} />
-                  <div className="w-6 h-6 rounded-full border border-zinc-700" style={{ background: theme.colors.surface }} />
+                  <div className="w-6 h-6 rounded-full border border-zinc-700" style={{ background: theme.colors.primary }} title="Primary" />
+                  <div className="w-6 h-6 rounded-full border border-zinc-700" style={{ background: theme.colors.secondary }} title="Secondary" />
+                  <div className="w-6 h-6 rounded-full border border-zinc-700" style={{ background: theme.colors.bg }} title="Background" />
                 </div>
                 {selectedTheme === theme.id && (
                   <div className="absolute top-2 right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
@@ -258,46 +303,39 @@ export default function NewSpacePage() {
         </div>
       )}
 
-      {/* Step 3: Summary */}
+      {/* Step 3: First Page */}
       {step === 3 && (
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">You&apos;re ready!</h1>
-          <p className="text-zinc-400 mb-8">Review your choices and create your space.</p>
+          <h1 className="text-2xl font-bold text-white mb-2">Create your first page</h1>
+          <p className="text-zinc-400 mb-8">Every great docs site starts with a first page.</p>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4 mb-8">
+          <div className="space-y-5">
             <div>
-              <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Site name</p>
-              <p className="text-white font-medium">{nameValue || '\u2014'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">URL</p>
-              <p className="text-white">{slugValue || '\u2014'}.blinkbook.goblink.io</p>
-            </div>
-            <div>
-              <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Theme</p>
-              <div className="flex items-center gap-2">
-                <span className="text-white capitalize">{selectedTheme}</span>
-                {(() => {
-                  const theme = themePresets.find((t) => t.id === selectedTheme);
-                  if (!theme) return null;
-                  return (
-                    <div className="flex gap-1">
-                      <div className="w-4 h-4 rounded-full border border-zinc-700" style={{ background: theme.colors.primary }} />
-                      <div className="w-4 h-4 rounded-full border border-zinc-700" style={{ background: theme.colors.secondary }} />
-                    </div>
-                  );
-                })()}
-              </div>
+              <label htmlFor="firstPageTitle" className="block text-sm font-medium text-zinc-300 mb-1.5">
+                Page title
+              </label>
+              <input
+                id="firstPageTitle"
+                type="text"
+                value={firstPageTitle}
+                onChange={(e) => setFirstPageTitle(e.target.value)}
+                className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-lg placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                placeholder="Introduction"
+                autoFocus
+              />
+              <p className="text-xs text-zinc-500 mt-1.5">
+                You can add more pages after setup.
+              </p>
             </div>
           </div>
 
           {serverError && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-400 mb-6">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-400 mt-6">
               {serverError}
             </div>
           )}
 
-          <div className="flex justify-between">
+          <div className="flex justify-between mt-8">
             <button
               type="button"
               onClick={() => setStep(2)}
@@ -315,6 +353,66 @@ export default function NewSpacePage() {
               {creating && <Loader2 className="w-4 h-4 animate-spin" />}
               Create Space
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Done */}
+      {step === 4 && (
+        <div className="text-center py-8">
+          <style>{`
+            @keyframes checkScale {
+              0% { transform: scale(0); opacity: 0; }
+              50% { transform: scale(1.2); }
+              100% { transform: scale(1); opacity: 1; }
+            }
+            @keyframes checkDraw {
+              0% { stroke-dashoffset: 24; }
+              100% { stroke-dashoffset: 0; }
+            }
+            .check-circle {
+              animation: checkScale 0.5s ease-out forwards;
+            }
+            .check-mark {
+              stroke-dasharray: 24;
+              stroke-dashoffset: 24;
+              animation: checkDraw 0.4s ease-out 0.3s forwards;
+            }
+          `}</style>
+
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 border-2 border-green-500 mb-6 check-circle">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-400 check-mark">
+              <polyline points="4 12 10 18 20 6" />
+            </svg>
+          </div>
+
+          <h1 className="text-2xl font-bold text-white mb-2">Your docs site is ready!</h1>
+          <p className="text-zinc-400 mb-8 max-w-md mx-auto">
+            Your space has been created with your first page. Start writing content or preview your site.
+          </p>
+
+          <div className="flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (createdPageId) {
+                  router.push(`/dashboard/${createdSpaceId}/editor/${createdPageId}`);
+                } else {
+                  router.push(`/dashboard/${createdSpaceId}`);
+                }
+              }}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition"
+            >
+              Start Writing
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <Link
+              href={`/sites/${slugValue}`}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white font-medium rounded-lg transition"
+            >
+              View Site
+              <ExternalLink className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       )}

@@ -42,6 +42,46 @@ Your docs site is now running at `http://localhost:3000`.
 
 > Add screenshots of your documentation site here.
 
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
+| `NEXT_PUBLIC_APP_URL` | Yes | Application base URL (e.g., `http://localhost:3000`) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | No | Stripe publishable key for billing |
+| `STRIPE_SECRET_KEY` | No | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | No | Stripe webhook signing secret |
+| `RESEND_API_KEY` | No | Resend API key for transactional emails |
+| `RESEND_FROM_EMAIL` | No | Sender email address (default: `noreply@blinkbook.goblink.io`) |
+| `GOBLINK_API_KEY` | No | goBlink SDK key for crypto billing |
+
+## Database Setup
+
+BlinkBook uses Supabase (PostgreSQL). To set up:
+
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Run the migrations in order:
+
+```bash
+# Apply all migrations
+psql $DATABASE_URL < supabase/migrations/00001_blinkbook_schema.sql
+psql $DATABASE_URL < supabase/migrations/00002_blinkbook_phase_c.sql
+psql $DATABASE_URL < supabase/migrations/00003_blinkbook_phase_d.sql
+```
+
+3. Copy `.env.example` to `.env.local` and fill in your Supabase credentials
+
+## Deployment Checklist
+
+- [ ] Set all required environment variables
+- [ ] Run database migrations
+- [ ] Configure Stripe webhooks (if using billing)
+- [ ] Set up custom domain DNS (if using custom domains)
+- [ ] Enable Supabase Row Level Security policies
+- [ ] Configure Resend domain verification (if sending emails)
+- [ ] Run `pnpm build` to verify no build errors
+
 ## Project Structure
 
 ```

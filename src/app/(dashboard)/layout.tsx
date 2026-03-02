@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
+import { KeyboardShortcutsProvider } from '@/components/dashboard/keyboard-shortcuts-provider';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({
   children,
@@ -31,7 +37,9 @@ export default async function DashboardLayout({
       />
       <main className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
-          {children}
+          <KeyboardShortcutsProvider>
+            {children}
+          </KeyboardShortcutsProvider>
         </div>
       </main>
     </div>

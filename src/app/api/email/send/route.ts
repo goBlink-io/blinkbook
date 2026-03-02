@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { teamInviteHtml } from '@/lib/email/templates/team-invite';
+import { welcomeHtml } from '@/lib/email/templates/welcome';
 
 // Simple email send endpoint using Resend or fallback to console logging
 export async function POST(request: Request) {
@@ -8,6 +9,8 @@ export async function POST(request: Request) {
   let html = '';
   if (template === 'team-invite') {
     html = teamInviteHtml(data);
+  } else if (template === 'welcome') {
+    html = welcomeHtml(data);
   }
 
   // Try Resend if API key is available
