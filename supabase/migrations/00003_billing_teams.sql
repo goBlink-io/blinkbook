@@ -19,6 +19,9 @@ create table public.bb_subscriptions (
 );
 
 -- Drop existing bb_team_members (from init migration) and recreate with full schema
+drop policy if exists "pages_team_read" on public.bb_pages;
+drop policy if exists "pages_team_write" on public.bb_pages;
+drop policy if exists "spaces_team" on public.bb_spaces;
 drop table if exists public.bb_team_members;
 
 create table public.bb_team_members (
