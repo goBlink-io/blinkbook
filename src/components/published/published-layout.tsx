@@ -3,6 +3,25 @@ import { BookOpen } from 'lucide-react';
 import { PublishedSearch } from './published-search';
 import type { BBSpace, BBPage } from '@/types/database';
 
+/** Google Fonts URL for the brand font (if not a system font). */
+function googleFontUrl(font: string): string | null {
+  const supported: Record<string, string> = {
+    Inter: 'Inter:wght@400;500;600;700',
+    Roboto: 'Roboto:wght@400;500;700',
+    'Source Sans Pro': 'Source+Sans+Pro:wght@400;600;700',
+    Merriweather: 'Merriweather:wght@400;700',
+    'JetBrains Mono': 'JetBrains+Mono:wght@400;500;700',
+  };
+  const family = supported[font];
+  return family ? `https://fonts.googleapis.com/css2?family=${family}&display=swap` : null;
+}
+
+/** Build a font-family CSS value. */
+function fontStack(font: string): string {
+  if (font === 'JetBrains Mono') return "'JetBrains Mono', ui-monospace, monospace";
+  return `'${font}', ui-sans-serif, system-ui, sans-serif`;
+}
+
 interface NavItem {
   id: string;
   title: string;
@@ -28,11 +47,13 @@ function NavLink({
   item,
   spaceSlug,
   currentSlug,
+  primaryColor,
   depth = 0,
 }: {
   item: NavItem;
   spaceSlug: string;
   currentSlug: string;
+  primaryColor: string;
   depth?: number;
 }) {
   const isActive = item.slug === currentSlug;
@@ -43,10 +64,13 @@ function NavLink({
         href={`/sites/${spaceSlug}/${item.slug}`}
         className={`block py-1.5 text-sm transition border-l-2 ${
           isActive
-            ? 'text-white border-blue-500 font-medium'
+            ? 'text-white font-medium'
             : 'text-zinc-400 border-transparent hover:text-zinc-200 hover:border-zinc-600'
         }`}
-        style={{ paddingLeft: `${depth * 12 + 16}px` }}
+        style={{
+          paddingLeft: `${depth * 12 + 16}px`,
+          ...(isActive ? { borderColor: primaryColor } : {}),
+        }}
       >
         {item.title}
       </Link>
@@ -56,6 +80,7 @@ function NavLink({
           item={child}
           spaceSlug={spaceSlug}
           currentSlug={currentSlug}
+          primaryColor={primaryColor}
           depth={depth + 1}
         />
       ))}
@@ -106,16 +131,40 @@ export function PublishedLayout({
 }: PublishedLayoutProps) {
   const navTree = buildNavTree(pages);
 
+  const primaryColor = space.brand_primary_color ?? '#3B82F6';
+  const accentColor = space.brand_accent_color ?? '#10B981';
+  const brandFont = space.brand_font ?? 'Inter';
+  const hidePoweredBy = space.brand_hide_powered_by ?? false;
+  const logoUrl = space.brand_logo_url ?? space.logo_url;
+  const fontHref = googleFontUrl(brandFont);
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50">
+    <div
+      className="min-h-screen bg-zinc-950 text-zinc-50"
+      style={{
+        '--brand-primary': primaryColor,
+        '--brand-accent': accentColor,
+        fontFamily: fontStack(brandFont),
+      } as React.CSSProperties}
+    >
+      {/* Load Google Font */}
+      {fontHref && (
+        // eslint-disable-next-line @next/next/no-page-custom-font
+        <link rel="stylesheet" href={fontHref} />
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-lg">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between h-14 px-4 lg:px-8">
           <Link href={`/sites/${space.slug}`} className="flex items-center gap-2.5">
-            {space.logo_url ? (
-              <img src={space.logo_url} alt="" className="w-7 h-7 rounded" />
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="" className="w-7 h-7 rounded object-contain" />
             ) : (
-              <div className="w-7 h-7 rounded bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center">
+              <div
+                className="w-7 h-7 rounded flex items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}
+              >
                 <BookOpen className="w-3.5 h-3.5 text-white" />
               </div>
             )}
@@ -130,7 +179,13 @@ export function PublishedLayout({
         <aside className="hidden lg:block w-64 shrink-0 border-r border-zinc-800">
           <nav className="sticky top-14 overflow-y-auto h-[calc(100vh-3.5rem)] py-6 px-2">
             {navTree.map((item) => (
-              <NavLink key={item.id} item={item} spaceSlug={space.slug} currentSlug={currentSlug} />
+              <NavLink
+                key={item.id}
+                item={item}
+                spaceSlug={space.slug}
+                currentSlug={currentSlug}
+                primaryColor={primaryColor}
+              />
             ))}
           </nav>
         </aside>
@@ -149,14 +204,16 @@ export function PublishedLayout({
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800 py-6 text-center">
-        <p className="text-xs text-zinc-600">
-          Built with{' '}
-          <a href="/" className="text-zinc-400 hover:text-white transition">
-            BlinkBook
-          </a>
-        </p>
-      </footer>
+      {!hidePoweredBy && (
+        <footer className="border-t border-zinc-800 py-6 text-center">
+          <p className="text-xs text-zinc-600">
+            Built with{' '}
+            <a href="/" className="text-zinc-400 hover:text-white transition">
+              BlinkBook
+            </a>
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

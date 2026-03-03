@@ -17,6 +17,12 @@ export interface BBSpace {
   logo_url: string | null;
   custom_domain: string | null;
   is_published: boolean;
+  // Custom branding
+  brand_logo_url: string | null;
+  brand_primary_color: string;
+  brand_accent_color: string;
+  brand_font: string;
+  brand_hide_powered_by: boolean;
   created_at: string;
   updated_at: string;
 }

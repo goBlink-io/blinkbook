@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowLeft, Check, Loader2, Upload, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Upload, Trash2, Image as ImageIcon, X } from 'lucide-react';
 import { themes, type ThemeName } from '@/config/themes';
 import type { BBSpace } from '@/types/database';
 
 const THEME_NAMES: ThemeName[] = ['midnight', 'ocean', 'forest', 'sunset', 'lavender', 'arctic'];
+const BRAND_FONTS = ['Inter', 'Roboto', 'Source Sans Pro', 'Merriweather', 'JetBrains Mono'] as const;
+type BrandFont = (typeof BRAND_FONTS)[number];
 type Tab = 'general' | 'branding' | 'domain' | 'danger';
 
 export default function SpaceSettingsPage() {
@@ -20,13 +22,22 @@ export default function SpaceSettingsPage() {
   const [tab, setTab] = useState<Tab>('general');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Form state
+  // General form state
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
   const [selectedTheme, setSelectedTheme] = useState<ThemeName>('midnight');
   const [customDomain, setCustomDomain] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState('');
+
+  // Custom branding state
+  const [brandPrimary, setBrandPrimary] = useState('#3B82F6');
+  const [brandAccent, setBrandAccent] = useState('#10B981');
+  const [brandFont, setBrandFont] = useState<BrandFont>('Inter');
+  const [brandHidePoweredBy, setBrandHidePoweredBy] = useState(false);
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -43,6 +54,11 @@ export default function SpaceSettingsPage() {
         setDescription(data.description ?? '');
         setSelectedTheme((data.theme?.preset as ThemeName) ?? 'midnight');
         setCustomDomain(data.custom_domain ?? '');
+        setBrandPrimary(data.brand_primary_color ?? '#3B82F6');
+        setBrandAccent(data.brand_accent_color ?? '#10B981');
+        setBrandFont((data.brand_font as BrandFont) ?? 'Inter');
+        setBrandHidePoweredBy(data.brand_hide_powered_by ?? false);
+        setBrandLogoUrl(data.brand_logo_url ?? null);
       }
       setLoading(false);
     };
@@ -81,6 +97,41 @@ export default function SpaceSettingsPage() {
       const data = await res.json();
       setMessage({ type: 'error', text: data.error });
     }
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    setLogoUploading(true);
+    setMessage(null);
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`/api/spaces/${siteId}/logo`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMessage({ type: 'error', text: data.error });
+    } else {
+      setBrandLogoUrl(data.url);
+      setSpace(data.space);
+      setMessage({ type: 'success', text: 'Logo uploaded' });
+    }
+    setLogoUploading(false);
+  };
+
+  const handleLogoRemove = async () => {
+    setLogoUploading(true);
+    setMessage(null);
+    const res = await fetch(`/api/spaces/${siteId}/logo`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) {
+      setMessage({ type: 'error', text: data.error });
+    } else {
+      setBrandLogoUrl(null);
+      setSpace(data.space);
+      setMessage({ type: 'success', text: 'Logo removed' });
+    }
+    setLogoUploading(false);
   };
 
   if (loading) {
@@ -201,63 +252,281 @@ export default function SpaceSettingsPage() {
 
       {/* Branding */}
       {tab === 'branding' && (
-        <div>
-          <h3 className="text-sm font-medium text-zinc-300 mb-4">Theme Preset</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
-            {THEME_NAMES.map((themeName) => {
-              const theme = themes[themeName];
-              const isSelected = selectedTheme === themeName;
-              return (
+        <div className="space-y-10">
+          {/* Theme Preset */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-4">Theme Preset</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {THEME_NAMES.map((themeName) => {
+                const theme = themes[themeName];
+                const isSelected = selectedTheme === themeName;
+                return (
+                  <button
+                    key={themeName}
+                    onClick={() => setSelectedTheme(themeName)}
+                    className={`relative rounded-xl border-2 p-4 transition text-left ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-500/5'
+                        : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900'
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                    <div className="flex gap-1.5 mb-3">
+                      <div className="w-6 h-6 rounded-md" style={{ backgroundColor: theme.primary }} />
+                      <div className="w-6 h-6 rounded-md" style={{ backgroundColor: theme.secondary }} />
+                      <div className="w-6 h-6 rounded-md border border-zinc-700" style={{ backgroundColor: theme.background }} />
+                    </div>
+                    <p className="text-sm font-medium text-white capitalize">{themeName}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Logo Upload */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1.5">Brand Logo</h3>
+            <p className="text-xs text-zinc-500 mb-4">
+              Shown in the header of your published site. PNG, JPG, SVG, GIF or WebP, max 2MB.
+            </p>
+            {brandLogoUrl ? (
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 rounded-xl border border-zinc-700 bg-zinc-800 flex items-center justify-center overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={brandLogoUrl} alt="Brand logo" className="w-full h-full object-contain p-1" />
+                </div>
                 <button
-                  key={themeName}
-                  onClick={() => setSelectedTheme(themeName)}
-                  className={`relative rounded-xl border-2 p-4 transition text-left ${
-                    isSelected
+                  onClick={handleLogoRemove}
+                  disabled={logoUploading}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg transition disabled:opacity-50"
+                >
+                  {logoUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <X className="w-4 h-4" />
+                  )}
+                  Remove logo
+                </button>
+              </div>
+            ) : (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleLogoUpload(file);
+                }}
+                className="border-2 border-dashed border-zinc-700 hover:border-zinc-500 rounded-xl p-8 text-center cursor-pointer transition"
+              >
+                {logoUploading ? (
+                  <Loader2 className="w-8 h-8 text-zinc-500 mx-auto mb-3 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+                )}
+                <p className="text-sm text-zinc-400 mb-1">
+                  {logoUploading ? 'Uploading…' : 'Drag & drop or click to upload'}
+                </p>
+                <p className="text-xs text-zinc-600">PNG, JPG, SVG, GIF, WebP up to 2MB</p>
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleLogoUpload(file);
+                e.target.value = '';
+              }}
+            />
+          </section>
+
+          {/* Colors */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-4">Brand Colors</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs text-zinc-400 mb-2">Primary Color</label>
+                <p className="text-xs text-zinc-600 mb-3">Used for links, active nav items, and buttons.</p>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={brandPrimary}
+                      onChange={(e) => setBrandPrimary(e.target.value)}
+                      className="w-10 h-10 rounded-lg border border-zinc-700 cursor-pointer bg-zinc-800 p-0.5"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={brandPrimary}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setBrandPrimary(v);
+                    }}
+                    className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    placeholder="#3B82F6"
+                    maxLength={7}
+                  />
+                  <div className="w-8 h-8 rounded-lg border border-zinc-700 shrink-0" style={{ backgroundColor: brandPrimary }} />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-zinc-400 mb-2">Accent Color</label>
+                <p className="text-xs text-zinc-600 mb-3">Used for code blocks, callouts, and highlights.</p>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={brandAccent}
+                      onChange={(e) => setBrandAccent(e.target.value)}
+                      className="w-10 h-10 rounded-lg border border-zinc-700 cursor-pointer bg-zinc-800 p-0.5"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={brandAccent}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setBrandAccent(v);
+                    }}
+                    className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    placeholder="#10B981"
+                    maxLength={7}
+                  />
+                  <div className="w-8 h-8 rounded-lg border border-zinc-700 shrink-0" style={{ backgroundColor: brandAccent }} />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Font */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1.5">Body Font</h3>
+            <p className="text-xs text-zinc-500 mb-4">Applied to the body text of your published documentation.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {BRAND_FONTS.map((font) => (
+                <button
+                  key={font}
+                  onClick={() => setBrandFont(font)}
+                  className={`px-4 py-3 rounded-xl border-2 text-left transition ${
+                    brandFont === font
                       ? 'border-blue-500 bg-blue-500/5'
                       : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900'
                   }`}
                 >
-                  {isSelected && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
-                  <div className="flex gap-1.5 mb-3">
-                    <div className="w-6 h-6 rounded-md" style={{ backgroundColor: theme.primary }} />
-                    <div className="w-6 h-6 rounded-md" style={{ backgroundColor: theme.secondary }} />
-                    <div className="w-6 h-6 rounded-md border border-zinc-700" style={{ backgroundColor: theme.background }} />
-                  </div>
-                  <p className="text-sm font-medium text-white capitalize">{themeName}</p>
+                  <p className="text-xs text-zinc-500 mb-0.5">Aa</p>
+                  <p className="text-sm text-white font-medium">{font}</p>
                 </button>
-              );
-            })}
-          </div>
-
-          <h3 className="text-sm font-medium text-zinc-300 mb-4">Logo</h3>
-          <div className="border-2 border-dashed border-zinc-700 rounded-xl p-8 text-center mb-8">
-            <Upload className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
-            <p className="text-sm text-zinc-400 mb-1">Drag & drop or click to upload</p>
-            <p className="text-xs text-zinc-600">PNG, JPG, SVG up to 2MB</p>
-          </div>
-
-          {/* Preview */}
-          <h3 className="text-sm font-medium text-zinc-300 mb-4">Preview</h3>
-          <div
-            className="rounded-xl border border-zinc-800 p-6 mb-8"
-            style={{ backgroundColor: themes[selectedTheme].background }}
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themes[selectedTheme].primary }} />
-              <span className="text-sm font-medium" style={{ color: themes[selectedTheme].text.primary }}>
-                {space.name}
-              </span>
+              ))}
             </div>
-            <div className="h-2 w-3/4 rounded-full mb-2" style={{ backgroundColor: themes[selectedTheme].surface }} />
-            <div className="h-2 w-1/2 rounded-full" style={{ backgroundColor: themes[selectedTheme].surface }} />
-          </div>
+          </section>
+
+          {/* Powered By */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-4">Footer Badge</h3>
+            <label className="flex items-center justify-between gap-4 p-4 rounded-xl bg-zinc-900 border border-zinc-800 cursor-pointer">
+              <div>
+                <p className="text-sm text-white font-medium">Hide &ldquo;Powered by goBlink Book&rdquo;</p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Remove the powered-by attribution from your site footer.
+                </p>
+              </div>
+              <div
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  brandHidePoweredBy ? 'bg-blue-600' : 'bg-zinc-700'
+                }`}
+                onClick={() => setBrandHidePoweredBy((v) => !v)}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    brandHidePoweredBy ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </div>
+            </label>
+          </section>
+
+          {/* Live Preview */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-4">Live Preview</h3>
+            <div
+              className="rounded-xl border border-zinc-700 overflow-hidden"
+              style={{ fontFamily: brandFont === 'JetBrains Mono' ? 'monospace' : brandFont + ', sans-serif' }}
+            >
+              {/* Preview Header */}
+              <div className="flex items-center gap-3 px-5 py-3 border-b" style={{ borderColor: brandPrimary + '33', backgroundColor: brandPrimary + '0d' }}>
+                {brandLogoUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={brandLogoUrl} alt="" className="w-7 h-7 rounded object-contain" />
+                ) : (
+                  <div className="w-7 h-7 rounded flex items-center justify-center" style={{ backgroundColor: brandPrimary }}>
+                    <Upload className="w-3.5 h-3.5 text-white" />
+                  </div>
+                )}
+                <span className="text-sm font-bold text-white">{space.name}</span>
+              </div>
+
+              <div className="flex bg-zinc-900">
+                {/* Preview Sidebar */}
+                <div className="w-48 border-r border-zinc-800 p-4 space-y-1 shrink-0">
+                  <div
+                    className="text-sm px-3 py-1.5 rounded border-l-2 font-medium"
+                    style={{ color: 'white', borderColor: brandPrimary, backgroundColor: brandPrimary + '1a' }}
+                  >
+                    Getting Started
+                  </div>
+                  <div className="text-sm px-3 py-1.5 text-zinc-500 border-l-2 border-transparent">
+                    Installation
+                  </div>
+                  <div className="text-sm px-3 py-1.5 text-zinc-500 border-l-2 border-transparent">
+                    Configuration
+                  </div>
+                </div>
+
+                {/* Preview Content */}
+                <div className="flex-1 p-5 space-y-3 min-w-0">
+                  <h2 className="text-base font-bold text-white">Getting Started</h2>
+                  <p className="text-sm text-zinc-400">
+                    Welcome to your documentation.{' '}
+                    <span className="font-medium" style={{ color: brandPrimary }}>Learn more →</span>
+                  </p>
+                  <div
+                    className="rounded-lg px-3 py-2 text-xs font-mono"
+                    style={{ backgroundColor: brandAccent + '18', color: brandAccent, borderLeft: `3px solid ${brandAccent}` }}
+                  >
+                    npm install my-package
+                  </div>
+                  {!brandHidePoweredBy && (
+                    <p className="text-xs text-zinc-600 pt-2">
+                      Built with <span className="text-zinc-400">BlinkBook</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
 
           <button
-            onClick={() => save({ theme: { preset: selectedTheme } })}
+            onClick={() =>
+              save({
+                theme: { preset: selectedTheme },
+                brand_primary_color: brandPrimary,
+                brand_accent_color: brandAccent,
+                brand_font: brandFont,
+                brand_hide_powered_by: brandHidePoweredBy,
+              })
+            }
             disabled={saving}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg transition"
           >
