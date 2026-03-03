@@ -11,22 +11,17 @@ import {
   ArrowRight,
   Check,
   X,
-  Sparkles,
   Type,
   GripVertical,
   Slash,
   Image,
   Table,
-  ChevronRight,
-  Zap,
-  BookOpen,
-  Rocket,
 } from "lucide-react";
 import {
   Section,
   FeatureCard,
   SmoothScrollHandler,
-  AnimatedBackground,
+  GrainOverlay,
 } from "@/components/landing/client-parts";
 
 /* ─── Features data ─── */
@@ -75,9 +70,9 @@ const features = [
 
 /* ─── How it works ─── */
 const steps = [
-  { icon: Zap, step: "1", title: "Sign up", desc: "Create your free account in seconds. No credit card required." },
-  { icon: BookOpen, step: "2", title: "Create your space", desc: "Pick a template, choose a theme, and start writing with our block editor." },
-  { icon: Rocket, step: "3", title: "Publish", desc: "Hit publish and your docs are live. Add a custom domain when you're ready." },
+  { step: "1", title: "Sign up", desc: "Create your free account in seconds. No credit card required." },
+  { step: "2", title: "Create your space", desc: "Pick a template, choose a theme, and start writing with our block editor." },
+  { step: "3", title: "Publish", desc: "Hit publish and your docs are live. Add a custom domain when you're ready." },
 ];
 
 /* ─── Editor blocks for showcase ─── */
@@ -129,7 +124,7 @@ const pricingTiers = [
     price: "$19",
     period: "/mo",
     description: "For creators shipping polished docs.",
-    cta: "Start Pro Trial",
+    cta: "Go Pro",
     ctaHref: "/signup?plan=pro",
     highlighted: true,
     badge: "Most Popular",
@@ -146,7 +141,7 @@ const pricingTiers = [
     price: "$49",
     period: "/mo",
     description: "For organizations needing collaboration.",
-    cta: "Start Team Trial",
+    cta: "Go Team",
     ctaHref: "/signup?plan=team",
     highlighted: false,
     features: [
@@ -162,7 +157,7 @@ const pricingTiers = [
     price: "$99",
     period: "/mo",
     description: "Scale, control, and white-label.",
-    cta: "Start Business Trial",
+    cta: "Go Business",
     ctaHref: "/signup?plan=business",
     highlighted: false,
     badge: "Best Value",
@@ -178,8 +173,8 @@ const pricingTiers = [
 
 function ComparisonCell({ value }: { value: string | boolean }) {
   if (value === true) return <Check className="w-4 h-4 text-green-400 mx-auto" />;
-  if (value === false) return <X className="w-4 h-4 text-zinc-600 mx-auto" />;
-  return <span className="text-zinc-400 text-xs">{value}</span>;
+  if (value === false) return <X className="w-4 h-4 text-slate-600 mx-auto" />;
+  return <span className="text-slate-400 text-xs">{value}</span>;
 }
 
 function BlinkBookCell({ value }: { value: string | boolean }) {
@@ -190,19 +185,17 @@ function BlinkBookCell({ value }: { value: string | boolean }) {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden">
       <SmoothScrollHandler />
-      <AnimatedBackground />
+      <GrainOverlay />
 
       {/* ═══ NAV ═══ */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto flex items-center justify-between h-14 px-6">
-          <Link href="/" className="text-lg font-bold tracking-tight">
-            <span className="bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">
-              goBlink Book
-            </span>
+          <Link href="/" className="text-lg font-bold tracking-tight text-white">
+            goBlink Book
           </Link>
-          <div className="hidden sm:flex items-center gap-6 text-sm text-zinc-400">
+          <div className="hidden sm:flex items-center gap-6 text-sm text-slate-400">
             <a href="#features" className="hover:text-white transition-colors">
               Features
             </a>
@@ -216,7 +209,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
+              className="text-sm text-slate-400 hover:text-white transition-colors"
             >
               Log in
             </Link>
@@ -233,18 +226,14 @@ export default function LandingPage() {
       {/* ═══ HERO ═══ */}
       <header className="relative pt-32 sm:pt-40 pb-20 px-6">
         <Section className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-800 bg-zinc-900/50 text-xs text-zinc-400 mb-8">
-            <Sparkles className="w-3 h-3 text-blue-400" />
-            The modern GitBook alternative
-          </div>
-          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1]">
-            Documentation that
-            <br />
-            <span className="bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">
-              ships with you
-            </span>
+          <h1
+            className="font-bold tracking-tight mb-6 leading-[1.1] text-white"
+            style={{ fontSize: "clamp(2.5rem, 5vw, 3.75rem)" }}
+          >
+            Documentation that{" "}
+            <span className="font-extrabold">ships with you</span>
           </h1>
-          <p className="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
             A hosted documentation platform with a powerful block editor, instant search,
             custom domains, and flat pricing. No per-seat fees. No surprises.
           </p>
@@ -258,7 +247,7 @@ export default function LandingPage() {
             </Link>
             <a
               href="/docs"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg border border-zinc-700 text-zinc-300 font-semibold hover:bg-zinc-800/60 hover:border-zinc-600 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg border border-slate-700 text-slate-300 font-semibold hover:bg-slate-800/60 hover:border-slate-600 transition-all"
             >
               See Demo
             </a>
@@ -267,21 +256,21 @@ export default function LandingPage() {
 
         {/* Editor mockup */}
         <Section className="max-w-4xl mx-auto mt-16" delay={200}>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 shadow-2xl shadow-blue-900/10 overflow-hidden">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/80 shadow-2xl shadow-blue-900/10 overflow-hidden">
             {/* Title bar */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800 bg-zinc-900">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-800 bg-slate-900">
               <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-zinc-700" />
-                <div className="w-3 h-3 rounded-full bg-zinc-700" />
-                <div className="w-3 h-3 rounded-full bg-zinc-700" />
+                <div className="w-3 h-3 rounded-full bg-slate-700" />
+                <div className="w-3 h-3 rounded-full bg-slate-700" />
+                <div className="w-3 h-3 rounded-full bg-slate-700" />
               </div>
-              <span className="text-xs text-zinc-500 ml-2">my-docs.book.goblink.io</span>
+              <span className="text-xs text-slate-500 ml-2">my-docs.book.goblink.io</span>
             </div>
             {/* Editor body */}
             <div className="flex min-h-[280px]">
               {/* Sidebar */}
-              <div className="w-48 border-r border-zinc-800 p-4 hidden sm:block">
-                <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
+              <div className="w-48 border-r border-slate-800 p-4 hidden sm:block">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
                   Pages
                 </div>
                 <div className="space-y-1">
@@ -292,7 +281,7 @@ export default function LandingPage() {
                         className={`text-sm px-2 py-1.5 rounded ${
                           i === 0
                             ? "bg-blue-600/10 text-blue-400 font-medium"
-                            : "text-zinc-400 hover:text-zinc-200"
+                            : "text-slate-400 hover:text-slate-200"
                         }`}
                       >
                         {page}
@@ -301,30 +290,25 @@ export default function LandingPage() {
                   )}
                 </div>
               </div>
-              {/* Content */}
+              {/* Content — real formatted text, not skeleton bars */}
               <div className="flex-1 p-6 sm:p-8">
-                <div className="h-5 w-48 bg-gradient-to-r from-blue-500/20 to-violet-500/20 rounded mb-4" />
-                <div className="space-y-2.5 mb-6">
-                  <div className="h-3 w-full bg-zinc-800 rounded" />
-                  <div className="h-3 w-5/6 bg-zinc-800 rounded" />
-                  <div className="h-3 w-4/6 bg-zinc-800 rounded" />
-                </div>
-                <div className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 p-4 mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-400" />
-                    <div className="h-2.5 w-16 bg-blue-400/20 rounded" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <div className="h-2 w-full bg-zinc-700/50 rounded" />
-                    <div className="h-2 w-3/4 bg-zinc-700/50 rounded" />
-                  </div>
+                <h2 className="text-xl font-bold text-slate-300 mb-3">Getting Started</h2>
+                <p className="text-sm text-slate-500 leading-relaxed mb-1">
+                  Welcome to your documentation space. This guide walks you through
+                </p>
+                <p className="text-sm text-slate-500 leading-relaxed mb-5">
+                  setup, configuration, and publishing your first page.
+                </p>
+                <div className="rounded-lg border-l-2 border-blue-500 bg-blue-500/5 p-3 mb-5">
+                  <p className="text-sm text-blue-300/80">
+                    Tip: Use the block editor to drag and drop content, or type{" "}
+                    <code className="px-1 py-0.5 text-xs rounded bg-slate-800 border border-slate-700 text-slate-300">/</code>{" "}
+                    for slash commands.
+                  </p>
                 </div>
                 <div className="rounded-lg bg-[#0d1117] p-3 font-mono text-xs">
-                  <div className="text-zinc-500">
-                    {"// "}
-                    <span className="text-green-400">Quick start</span>
-                  </div>
-                  <div className="text-blue-400">npx create-next-app my-docs</div>
+                  <div className="text-slate-500 mb-1">bash</div>
+                  <div className="text-blue-400">npm install @goblink/sdk</div>
                 </div>
               </div>
             </div>
@@ -333,23 +317,24 @@ export default function LandingPage() {
       </header>
 
       {/* ═══ SOCIAL PROOF ═══ */}
-      <section className="border-y border-zinc-800/50 py-8">
-        <div className="max-w-4xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12 text-sm text-zinc-500">
+      <section className="border-y border-slate-800/50 py-8">
+        <div className="max-w-4xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12 text-sm text-slate-500">
           <span>
-            Built by the team behind{" "}
+            A{" "}
             <a
               href="https://goblink.io"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-zinc-300 hover:text-white transition-colors"
+              className="text-slate-300 hover:text-white transition-colors"
             >
               goBlink
-            </a>
+            </a>{" "}
+            product
           </span>
-          <span className="hidden sm:block text-zinc-700">|</span>
-          <span>Flat pricing — no per-seat fees</span>
-          <span className="hidden sm:block text-zinc-700">|</span>
-          <span>Free tier available</span>
+          <span className="hidden sm:block text-slate-700">·</span>
+          <span>Free to start</span>
+          <span className="hidden sm:block text-slate-700">·</span>
+          <span>No credit card required</span>
         </div>
       </section>
 
@@ -359,13 +344,22 @@ export default function LandingPage() {
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-3">
             Everything you need to ship great docs
           </h2>
-          <p className="text-zinc-400 text-center mb-16 max-w-2xl mx-auto">
+          <p className="text-slate-400 text-center mb-16 max-w-2xl mx-auto">
             A complete documentation platform — editor, hosting, search, analytics — all in one place.
           </p>
         </Section>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {features.map((f, i) => (
+        {/* Hero features — top row, 2 large cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          {features.slice(0, 2).map((f, i) => (
             <Section key={f.title} delay={i * 50}>
+              <FeatureCard icon={f.icon} title={f.title} desc={f.desc} />
+            </Section>
+          ))}
+        </div>
+        {/* Remaining features — 3-column grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {features.slice(2).map((f, i) => (
+            <Section key={f.title} delay={(i + 2) * 50}>
               <FeatureCard icon={f.icon} title={f.title} desc={f.desc} />
             </Section>
           ))}
@@ -378,30 +372,44 @@ export default function LandingPage() {
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-3">
             Up and running in minutes
           </h2>
-          <p className="text-zinc-400 text-center mb-16 max-w-xl mx-auto">
+          <p className="text-slate-400 text-center mb-16 max-w-xl mx-auto">
             Three steps from zero to published docs.
           </p>
         </Section>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {steps.map((s, i) => {
-            const Icon = s.icon;
-            return (
-              <Section key={s.title} delay={i * 100}>
-                <div className="relative text-center">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600/20 to-violet-600/20 border border-blue-500/20 mb-5">
-                    <Icon className="w-6 h-6 text-blue-400" />
-                  </div>
-                  {i < steps.length - 1 && (
-                    <ChevronRight className="hidden md:block absolute top-7 -right-4 w-5 h-5 text-zinc-700" />
-                  )}
-                  <div className="text-xs font-mono text-blue-400/60 mb-2">Step {s.step}</div>
-                  <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
-                  <p className="text-zinc-500 text-sm leading-relaxed">{s.desc}</p>
+
+        {/* Desktop: horizontal connected steps */}
+        <Section>
+          <div className="hidden md:grid grid-cols-3 gap-0 relative">
+            {/* Connecting line */}
+            <div className="absolute top-7 left-[calc(16.67%+20px)] right-[calc(16.67%+20px)] border-t-2 border-dashed border-slate-800" />
+            {steps.map((s) => (
+              <div key={s.title} className="flex flex-col items-center text-center px-6">
+                <div className="w-14 h-14 rounded-full border-2 border-slate-800 bg-slate-950 flex items-center justify-center text-lg font-bold text-white mb-4 relative z-10">
+                  {s.step}
                 </div>
-              </Section>
-            );
-          })}
-        </div>
+                <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed text-left">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile: vertical timeline */}
+          <div className="md:hidden relative pl-10">
+            {/* Vertical connecting line */}
+            <div className="absolute top-7 bottom-7 left-[18px] border-l-2 border-dashed border-slate-800" />
+            <div className="space-y-10">
+              {steps.map((s) => (
+                <div key={s.title} className="relative">
+                  <div className="absolute -left-10 top-0 w-9 h-9 rounded-full border-2 border-slate-800 bg-slate-950 flex items-center justify-center text-sm font-bold text-white">
+                    {s.step}
+                  </div>
+                  <h3 className="text-lg font-semibold mb-1">{s.title}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
       </section>
 
       {/* ═══ EDITOR SHOWCASE ═══ */}
@@ -410,7 +418,7 @@ export default function LandingPage() {
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-3">
             A block editor you&apos;ll actually enjoy
           </h2>
-          <p className="text-zinc-400 text-center mb-16 max-w-2xl mx-auto">
+          <p className="text-slate-400 text-center mb-16 max-w-2xl mx-auto">
             Powered by Tiptap. Slash commands, drag-and-drop, rich embeds — write docs the way you write notes.
           </p>
         </Section>
@@ -418,29 +426,27 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Editor mock */}
           <Section delay={0}>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-900">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/80 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-800 bg-slate-900">
                 <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-slate-700" />
                 </div>
-                <span className="text-[11px] text-zinc-600 ml-2">Editor</span>
+                <span className="text-[11px] text-slate-600 ml-2">Editor</span>
               </div>
               <div className="p-5 space-y-4 min-h-[320px]">
                 {/* Heading block */}
                 <div className="flex items-start gap-2 group">
-                  <GripVertical className="w-4 h-4 text-zinc-700 mt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                  <div>
-                    <div className="text-xl font-bold text-white">Getting Started</div>
-                  </div>
+                  <GripVertical className="w-4 h-4 text-slate-700 mt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  <div className="text-xl font-bold text-white">Getting Started</div>
                 </div>
                 {/* Paragraph block */}
                 <div className="flex items-start gap-2 group">
-                  <GripVertical className="w-4 h-4 text-zinc-700 mt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                  <p className="text-sm text-zinc-400 leading-relaxed">
+                  <GripVertical className="w-4 h-4 text-slate-700 mt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  <p className="text-sm text-slate-400 leading-relaxed">
                     Welcome to your documentation space. Use{" "}
-                    <kbd className="px-1.5 py-0.5 text-xs rounded bg-zinc-800 border border-zinc-700 text-zinc-300">
+                    <kbd className="px-1.5 py-0.5 text-xs rounded bg-slate-800 border border-slate-700 text-slate-300">
                       /
                     </kbd>{" "}
                     to insert blocks.
@@ -448,35 +454,32 @@ export default function LandingPage() {
                 </div>
                 {/* Callout block */}
                 <div className="flex items-start gap-2 group">
-                  <GripVertical className="w-4 h-4 text-zinc-700 mt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                  <div className="flex-1 rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
-                    <div className="flex items-start gap-2">
-                      <Sparkles className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
-                      <p className="text-sm text-blue-300/80">
-                        Pro tip: Drag blocks to reorder them, or use keyboard shortcuts.
-                      </p>
-                    </div>
+                  <GripVertical className="w-4 h-4 text-slate-700 mt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  <div className="flex-1 rounded-lg border-l-2 border-blue-500 bg-blue-500/5 p-3">
+                    <p className="text-sm text-blue-300/80">
+                      Pro tip: Drag blocks to reorder them, or use keyboard shortcuts.
+                    </p>
                   </div>
                 </div>
                 {/* Code block */}
                 <div className="flex items-start gap-2 group">
-                  <GripVertical className="w-4 h-4 text-zinc-700 mt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  <GripVertical className="w-4 h-4 text-slate-700 mt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                   <div className="flex-1 rounded-lg bg-[#0d1117] p-3 font-mono text-xs">
-                    <div className="text-zinc-500 mb-1">javascript</div>
+                    <div className="text-slate-500 mb-1">javascript</div>
                     <div>
                       <span className="text-violet-400">const</span>{" "}
                       <span className="text-blue-300">config</span>{" "}
-                      <span className="text-zinc-500">=</span>{" "}
-                      <span className="text-zinc-400">{"{"}</span>{" "}
+                      <span className="text-slate-500">=</span>{" "}
+                      <span className="text-slate-400">{"{"}</span>{" "}
                       <span className="text-green-400">theme</span>
-                      <span className="text-zinc-500">:</span>{" "}
+                      <span className="text-slate-500">:</span>{" "}
                       <span className="text-amber-300">&quot;midnight&quot;</span>{" "}
-                      <span className="text-zinc-400">{"}"}</span>
+                      <span className="text-slate-400">{"}"}</span>
                     </div>
                   </div>
                 </div>
                 {/* Slash command hint */}
-                <div className="flex items-center gap-2 text-zinc-600 text-sm">
+                <div className="flex items-center gap-2 text-slate-600 text-sm">
                   <Slash className="w-3.5 h-3.5" />
                   <span>Type / for commands...</span>
                 </div>
@@ -490,10 +493,10 @@ export default function LandingPage() {
               const Icon = block.icon;
               return (
                 <Section key={block.label} delay={i * 60}>
-                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 hover:border-zinc-700 transition-colors">
-                    <Icon className="w-5 h-5 text-zinc-500 mb-3" />
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 hover:border-slate-700 transition-colors">
+                    <Icon className="w-5 h-5 text-slate-500 mb-3" />
                     <div className="text-sm font-medium mb-1">{block.label}</div>
-                    <div className="text-xs text-zinc-500">{block.desc}</div>
+                    <div className="text-xs text-slate-400">{block.desc}</div>
                   </div>
                 </Section>
               );
@@ -508,38 +511,36 @@ export default function LandingPage() {
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-3">
             How goBlink Book compares
           </h2>
-          <p className="text-zinc-400 text-center mb-12 max-w-xl mx-auto">
+          <p className="text-slate-400 text-center mb-12 max-w-xl mx-auto">
             The best of hosted and self-hosted, without the trade-offs.
           </p>
         </Section>
         <Section>
           <div className="relative">
-            <div className="overflow-x-auto rounded-xl border border-zinc-800">
+            <div className="overflow-x-auto rounded-xl border border-slate-800">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-zinc-900/80 border-b border-zinc-800">
-                    <th className="text-left px-5 py-4 font-semibold text-zinc-300 w-[180px]">
+                  <tr className="bg-slate-900/80 border-b border-slate-800">
+                    <th className="text-left px-5 py-4 font-semibold text-slate-300 w-[180px]">
                       Feature
                     </th>
-                    <th className="px-5 py-4 font-semibold text-center">
-                      <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
-                        goBlink Book
-                      </span>
+                    <th className="px-5 py-4 font-semibold text-center text-blue-400">
+                      goBlink Book
                     </th>
-                    <th className="px-5 py-4 font-semibold text-zinc-500 text-center">GitBook</th>
-                    <th className="px-5 py-4 font-semibold text-zinc-500 text-center">Mintlify</th>
-                    <th className="px-5 py-4 font-semibold text-zinc-500 text-center">Docusaurus</th>
+                    <th className="px-5 py-4 font-semibold text-slate-500 text-center">GitBook</th>
+                    <th className="px-5 py-4 font-semibold text-slate-500 text-center">Mintlify</th>
+                    <th className="px-5 py-4 font-semibold text-slate-500 text-center">Docusaurus</th>
                   </tr>
                 </thead>
                 <tbody>
                   {comparison.map((row, i) => (
                     <tr
                       key={row.feature}
-                      className={`border-b border-zinc-800/50 ${
-                        i % 2 === 0 ? "bg-zinc-900/20" : ""
+                      className={`border-b border-slate-800/50 ${
+                        i % 2 === 0 ? "bg-slate-900/20" : ""
                       }`}
                     >
-                      <td className="px-5 py-3 font-medium text-zinc-300">{row.feature}</td>
+                      <td className="px-5 py-3 font-medium text-slate-300">{row.feature}</td>
                       <td className="px-5 py-3 text-center">
                         <BlinkBookCell value={row.blinkbook} />
                       </td>
@@ -558,9 +559,9 @@ export default function LandingPage() {
               </table>
             </div>
             {/* Scroll fade hint on right edge — mobile only */}
-            <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950 to-transparent pointer-events-none rounded-r-xl md:hidden" />
+            <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none rounded-r-xl md:hidden" />
           </div>
-          <p className="text-center text-xs text-zinc-600 mt-3 md:hidden">
+          <p className="text-center text-xs text-slate-600 mt-3 md:hidden">
             Swipe to compare &rarr;
           </p>
         </Section>
@@ -572,7 +573,7 @@ export default function LandingPage() {
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-3">
             Simple, flat pricing
           </h2>
-          <p className="text-zinc-400 text-center mb-16 max-w-xl mx-auto">
+          <p className="text-slate-400 text-center mb-16 max-w-xl mx-auto">
             No per-seat charges. One price covers your entire team.
           </p>
         </Section>
@@ -582,8 +583,8 @@ export default function LandingPage() {
               <div
                 className={`relative rounded-2xl border p-7 flex flex-col h-full ${
                   tier.highlighted
-                    ? "border-blue-500/50 bg-zinc-900 shadow-lg shadow-blue-600/5"
-                    : "border-zinc-800 bg-zinc-900/50"
+                    ? "border-blue-400/30 bg-slate-900 shadow-lg shadow-blue-500/10"
+                    : "border-slate-800 bg-slate-900/50"
                 }`}
               >
                 {tier.badge && (
@@ -596,16 +597,16 @@ export default function LandingPage() {
                 <h3 className="text-base font-semibold text-white mb-1">{tier.name}</h3>
                 <div className="flex items-baseline gap-1 mb-2">
                   <span className="text-4xl font-bold text-white">{tier.price}</span>
-                  <span className="text-zinc-500 text-sm">{tier.period}</span>
+                  <span className="text-slate-500 text-sm">{tier.period}</span>
                 </div>
-                <p className="text-sm text-zinc-500 mb-6">{tier.description}</p>
+                <p className="text-sm text-slate-400 mb-6">{tier.description}</p>
 
                 <Link
                   href={tier.ctaHref}
                   className={`block text-center py-2.5 px-4 rounded-lg font-medium text-sm transition mb-6 ${
                     tier.highlighted
                       ? "bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white"
-                      : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
+                      : "bg-slate-800 hover:bg-slate-700 text-slate-200"
                   }`}
                 >
                   {tier.cta}
@@ -615,7 +616,7 @@ export default function LandingPage() {
                   {tier.features.map((f) => (
                     <div key={f} className="flex items-start gap-2.5">
                       <Check className="w-4 h-4 text-green-400/70 mt-0.5 shrink-0" />
-                      <span className="text-sm text-zinc-400">{f}</span>
+                      <span className="text-sm text-slate-400">{f}</span>
                     </div>
                   ))}
                 </div>
@@ -627,7 +628,7 @@ export default function LandingPage() {
           <div className="text-center mt-8">
             <Link
               href="/pricing"
-              className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors"
             >
               View full pricing & comparison
               <ArrowRight className="w-3.5 h-3.5" />
@@ -637,13 +638,12 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ FINAL CTA ═══ */}
-      <section className="relative py-24 sm:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-600/5 to-transparent pointer-events-none" />
-        <Section className="max-w-3xl mx-auto px-6 text-center relative">
+      <section className="py-24 sm:py-32">
+        <Section className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-5">
-            Ready to ship better docs?
+            Your docs deserve better.
           </h2>
-          <p className="text-lg text-zinc-400 mb-10 max-w-xl mx-auto">
+          <p className="text-lg text-slate-400 mb-10 max-w-xl mx-auto">
             Join goBlink Book and get your documentation live in minutes. Free to start, no credit card required.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -656,7 +656,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/pricing"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg border border-zinc-700 text-zinc-300 font-semibold hover:bg-zinc-800/60 hover:border-zinc-600 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg border border-slate-700 text-slate-300 font-semibold hover:bg-slate-800/60 hover:border-slate-600 transition-all"
             >
               View Pricing
             </Link>
@@ -665,20 +665,20 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="border-t border-zinc-800 py-12 px-6">
+      <footer className="border-t border-slate-800 py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <span className="text-sm font-semibold bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent">
+              <span className="text-sm font-bold text-white">
                 goBlink Book
               </span>
-              <span className="text-sm text-zinc-600 ml-2">
+              <span className="text-sm text-slate-600 ml-2">
                 A{" "}
                 <a
                   href="https://goblink.io"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-zinc-500 hover:text-white transition-colors"
+                  className="text-slate-500 hover:text-white transition-colors"
                 >
                   goBlink
                 </a>{" "}
@@ -690,7 +690,7 @@ export default function LandingPage() {
                 href="https://goblink.io"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="text-slate-500 hover:text-slate-300 transition-colors"
               >
                 goblink.io
               </a>
@@ -698,7 +698,7 @@ export default function LandingPage() {
                 href="https://merchant.goblink.io"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="text-slate-500 hover:text-slate-300 transition-colors"
               >
                 merchant.goblink.io
               </a>
@@ -706,13 +706,13 @@ export default function LandingPage() {
                 href="https://github.com/goBlink-io"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="text-slate-500 hover:text-slate-300 transition-colors"
               >
                 GitHub
               </a>
             </div>
           </div>
-          <div className="text-center mt-8 text-xs text-zinc-700">
+          <div className="text-center mt-8 text-xs text-slate-700">
             &copy; {new Date().getFullYear()} goBlink. All rights reserved.
           </div>
         </div>
