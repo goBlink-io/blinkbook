@@ -33,6 +33,12 @@ export interface BBSpace {
   // Monetization
   monetization_enabled: boolean;
   payout_wallet: string | null;
+  // SEO
+  meta_title: string | null;
+  meta_description: string | null;
+  og_image_url: string | null;
+  favicon_url: string | null;
+  social_twitter: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -67,6 +73,11 @@ export interface BBPage {
   is_premium: boolean;
   last_reviewed_at: string | null;
   review_exempt: boolean;
+  // SEO
+  meta_title: string | null;
+  meta_description: string | null;
+  og_image_url: string | null;
+  noindex: boolean;
   created_at: string;
   updated_at: string;
 }
