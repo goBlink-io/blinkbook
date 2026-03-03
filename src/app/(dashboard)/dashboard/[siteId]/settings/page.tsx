@@ -4,22 +4,14 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-<<<<<<< HEAD
-import { ArrowLeft, Check, Loader2, Upload, Trash2, Image as ImageIcon, X } from 'lucide-react';
-=======
-import { ArrowLeft, Check, Loader2, Upload, Trash2, FileText } from 'lucide-react';
->>>>>>> 05d6c54
+import { ArrowLeft, Check, Loader2, Upload, Trash2, Image as ImageIcon, X, FileText } from 'lucide-react';
 import { themes, type ThemeName } from '@/config/themes';
 import type { BBSpace, BBPage } from '@/types/database';
 
 const THEME_NAMES: ThemeName[] = ['midnight', 'ocean', 'forest', 'sunset', 'lavender', 'arctic'];
-<<<<<<< HEAD
 const BRAND_FONTS = ['Inter', 'Roboto', 'Source Sans Pro', 'Merriweather', 'JetBrains Mono'] as const;
 type BrandFont = (typeof BRAND_FONTS)[number];
-type Tab = 'general' | 'branding' | 'domain' | 'danger';
-=======
 type Tab = 'general' | 'branding' | 'domain' | 'reminders' | 'danger';
->>>>>>> 05d6c54
 
 export default function SpaceSettingsPage() {
   const { siteId } = useParams<{ siteId: string }>();
@@ -38,7 +30,6 @@ export default function SpaceSettingsPage() {
   const [customDomain, setCustomDomain] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState('');
 
-<<<<<<< HEAD
   // Custom branding state
   const [brandPrimary, setBrandPrimary] = useState('#3B82F6');
   const [brandAccent, setBrandAccent] = useState('#10B981');
@@ -47,14 +38,13 @@ export default function SpaceSettingsPage() {
   const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-=======
+
   // Review reminders state
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderDays, setReminderDays] = useState(90);
   const [stalePageCount, setStalePageCount] = useState<number | null>(null);
   const [trackedPages, setTrackedPages] = useState<BBPage[]>([]);
   const [savingPageExempt, setSavingPageExempt] = useState<string | null>(null);
->>>>>>> 05d6c54
 
   useEffect(() => {
     const load = async () => {
@@ -71,16 +61,13 @@ export default function SpaceSettingsPage() {
         setDescription(data.description ?? '');
         setSelectedTheme((data.theme?.preset as ThemeName) ?? 'midnight');
         setCustomDomain(data.custom_domain ?? '');
-<<<<<<< HEAD
         setBrandPrimary(data.brand_primary_color ?? '#3B82F6');
         setBrandAccent(data.brand_accent_color ?? '#10B981');
         setBrandFont((data.brand_font as BrandFont) ?? 'Inter');
         setBrandHidePoweredBy(data.brand_hide_powered_by ?? false);
         setBrandLogoUrl(data.brand_logo_url ?? null);
-=======
         setReminderEnabled(data.review_reminder_enabled ?? false);
         setReminderDays(data.review_reminder_days ?? 90);
->>>>>>> 05d6c54
       }
       setLoading(false);
     };

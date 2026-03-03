@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PublishedLayout } from '@/components/published/published-layout';
 import { renderTiptapDoc, extractHeadings, TiptapContent } from '@/components/published/tiptap-renderer';
 import { PageviewTracker } from '@/components/published/pageview-tracker';
+import { FeedbackWidget } from '@/components/published/feedback-widget';
 import type { BBPage, BBSpace, BBVersion, BBVersionPage, TiptapDoc } from '@/types/database';
 
 export const revalidate = 300;
@@ -201,6 +202,7 @@ export default async function PublishedSitePage({
     >
       <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">{currentPage.title}</h1>
       <TiptapContent html={html} />
+      <FeedbackWidget spaceId={space.id} pageId={currentPage.id} />
       <PageviewTracker spaceSlug={space.slug} pageId={currentPage.id} />
     </PublishedLayout>
   );

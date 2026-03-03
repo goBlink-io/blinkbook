@@ -2,14 +2,15 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Plus, FileText, Clock, CheckCircle, Loader2 } from 'lucide-react';
-import type { BBPage, BBSpace } from '@/types/database';
+import { Plus, FileText, Clock, CheckCircle, Loader2, ThumbsUp } from 'lucide-react';
+import type { BBPage, BBSpace, BBPageFeedbackSummary } from '@/types/database';
 
 export default function PagesListPage() {
   const params = useParams<{ siteId: string }>();
   const router = useRouter();
   const [pages, setPages] = useState<BBPage[]>([]);
   const [space, setSpace] = useState<BBSpace | null>(null);
+  const [feedback, setFeedback] = useState<Map<string, BBPageFeedbackSummary>>(new Map());
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [reviewingPageId, setReviewingPageId] = useState<string | null>(null);
@@ -24,9 +25,18 @@ export default function PagesListPage() {
     setLoading(false);
   }, [params.siteId]);
 
+  const fetchFeedback = useCallback(async () => {
+    const res = await fetch(`/api/feedback?space_id=${params.siteId}`);
+    if (res.ok) {
+      const summaries: BBPageFeedbackSummary[] = await res.json();
+      setFeedback(new Map(summaries.map((s) => [s.page_id, s])));
+    }
+  }, [params.siteId]);
+
   useEffect(() => {
     fetchPages();
-  }, [fetchPages]);
+    fetchFeedback();
+  }, [fetchPages, fetchFeedback]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -125,6 +135,13 @@ export default function PagesListPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
+                  {feedback.get(page.id) && (
+                    <span className="inline-flex items-center gap-1 text-xs text-zinc-400" title={`${feedback.get(page.id)!.total} votes`}>
+                      <ThumbsUp className="w-3 h-3" />
+                      {feedback.get(page.id)!.helpful_pct}%
+                      <span className="text-zinc-600">({feedback.get(page.id)!.total})</span>
+                    </span>
+                  )}
                   <span className="text-xs text-zinc-500">
                     {new Date(page.updated_at).toLocaleDateString()}
                   </span>
