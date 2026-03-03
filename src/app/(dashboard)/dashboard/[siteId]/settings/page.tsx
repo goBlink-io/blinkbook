@@ -11,7 +11,7 @@ import type { BBSpace, BBPage } from '@/types/database';
 const THEME_NAMES: ThemeName[] = ['midnight', 'ocean', 'forest', 'sunset', 'lavender', 'arctic'];
 const BRAND_FONTS = ['Inter', 'Roboto', 'Source Sans Pro', 'Merriweather', 'JetBrains Mono'] as const;
 type BrandFont = (typeof BRAND_FONTS)[number];
-type Tab = 'general' | 'branding' | 'domain' | 'reminders' | 'danger';
+type Tab = 'general' | 'branding' | 'domain' | 'reminders' | 'ai' | 'danger';
 
 export default function SpaceSettingsPage() {
   const { siteId } = useParams<{ siteId: string }>();
@@ -38,6 +38,9 @@ export default function SpaceSettingsPage() {
   const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // AI & Integrations state
+  const [llmsTxtEnabled, setLlmsTxtEnabled] = useState(true);
 
   // Review reminders state
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -68,6 +71,7 @@ export default function SpaceSettingsPage() {
         setBrandLogoUrl(data.brand_logo_url ?? null);
         setReminderEnabled(data.review_reminder_enabled ?? false);
         setReminderDays(data.review_reminder_days ?? 90);
+        setLlmsTxtEnabled(data.llms_txt_enabled ?? true);
       }
       setLoading(false);
     };
@@ -193,6 +197,7 @@ export default function SpaceSettingsPage() {
     { key: 'branding', label: 'Branding' },
     { key: 'domain', label: 'Domain' },
     { key: 'reminders', label: 'Review Reminders' },
+    { key: 'ai', label: 'AI & Integrations' },
     { key: 'danger', label: 'Danger Zone' },
   ];
 
@@ -751,6 +756,85 @@ export default function SpaceSettingsPage() {
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             Save Reminder Settings
+          </button>
+        </div>
+      )}
+
+      {/* AI & Integrations */}
+      {tab === 'ai' && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1">AI & Integrations</h3>
+            <p className="text-xs text-zinc-500 mb-5">
+              Make your documentation accessible to AI agents and LLM-powered tools.
+            </p>
+          </div>
+
+          {/* llms.txt toggle */}
+          <div className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4">
+            <div>
+              <p className="text-sm font-medium text-white">Enable llms.txt</p>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Auto-generate <code className="text-zinc-400 bg-zinc-800 px-1 py-0.5 rounded text-xs">llms.txt</code> and{' '}
+                <code className="text-zinc-400 bg-zinc-800 px-1 py-0.5 rounded text-xs">llms-full.txt</code> files so AI
+                agents can consume your documentation.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLlmsTxtEnabled((v) => !v)}
+              className={`relative inline-flex w-11 h-6 rounded-full transition-colors shrink-0 ml-4 ${
+                llmsTxtEnabled ? 'bg-blue-600' : 'bg-zinc-700'
+              }`}
+              role="switch"
+              aria-checked={llmsTxtEnabled}
+            >
+              <span
+                className={`inline-block w-4 h-4 bg-white rounded-full shadow transition-transform mt-1 ${
+                  llmsTxtEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Preview URLs */}
+          {llmsTxtEnabled && space.is_published && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4">
+              <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide mb-3">Available at</p>
+              <div className="space-y-2">
+                {[
+                  { label: 'llms.txt', path: '/llms.txt' },
+                  { label: 'llms-full.txt', path: '/llms-full.txt' },
+                ].map((file) => {
+                  const baseUrl = space.custom_domain
+                    ? `https://${space.custom_domain}`
+                    : `https://${space.slug}.blinkbook.goblink.io`;
+                  const url = `${baseUrl}${file.path}`;
+                  return (
+                    <div key={file.label} className="flex items-center gap-2">
+                      <FileText className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-400 hover:text-blue-300 transition truncate"
+                      >
+                        {url}
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => save({ llms_txt_enabled: llmsTxtEnabled })}
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg transition"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            Save AI Settings
           </button>
         </div>
       )}
