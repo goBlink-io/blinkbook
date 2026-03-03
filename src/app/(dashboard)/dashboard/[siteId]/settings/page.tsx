@@ -4,14 +4,15 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowLeft, Check, Loader2, Upload, Trash2, Image as ImageIcon, X, FileText, Search, Globe } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Upload, Trash2, Image as ImageIcon, X, FileText, Search, Globe, Download } from 'lucide-react';
+import { tiptapToMarkdown } from '@/lib/tiptap-to-markdown';
 import { themes, type ThemeName } from '@/config/themes';
 import type { BBSpace, BBPage } from '@/types/database';
 
 const THEME_NAMES: ThemeName[] = ['midnight', 'ocean', 'forest', 'sunset', 'lavender', 'arctic'];
 const BRAND_FONTS = ['Inter', 'Roboto', 'Source Sans Pro', 'Merriweather', 'JetBrains Mono'] as const;
 type BrandFont = (typeof BRAND_FONTS)[number];
-type Tab = 'general' | 'branding' | 'domain' | 'seo' | 'reminders' | 'ai' | 'danger';
+type Tab = 'general' | 'branding' | 'domain' | 'seo' | 'reminders' | 'ai' | 'data' | 'danger';
 
 export default function SpaceSettingsPage() {
   const { siteId } = useParams<{ siteId: string }>();
@@ -52,6 +53,9 @@ export default function SpaceSettingsPage() {
   const [faviconUploading, setFaviconUploading] = useState(false);
   const faviconInputRef = useRef<HTMLInputElement>(null);
   const [socialTwitter, setSocialTwitter] = useState('');
+
+  // Export state
+  const [exporting, setExporting] = useState(false);
 
   // Review reminders state
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -285,6 +289,7 @@ export default function SpaceSettingsPage() {
     { key: 'seo', label: 'SEO' },
     { key: 'reminders', label: 'Review Reminders' },
     { key: 'ai', label: 'AI & Integrations' },
+    { key: 'data', label: 'Data' },
     { key: 'danger', label: 'Danger Zone' },
   ];
 
@@ -1151,6 +1156,66 @@ export default function SpaceSettingsPage() {
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             Save AI Settings
           </button>
+        </div>
+      )}
+
+      {/* Data */}
+      {tab === 'data' && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1">Export</h3>
+            <p className="text-xs text-zinc-500 mb-5">
+              Download all your pages as a single Markdown file.
+            </p>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-white">Export All Pages</p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Downloads all pages as a concatenated Markdown file with page separators.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={exporting}
+                onClick={async () => {
+                  setExporting(true);
+                  setMessage(null);
+                  try {
+                    const res = await fetch(`/api/spaces/${siteId}/export`);
+                    if (!res.ok) throw new Error('Export failed');
+                    const pages: { title: string; slug: string; content: { type: 'doc'; content: unknown[] } }[] = await res.json();
+                    const parts = pages.map((page) => {
+                      const md = tiptapToMarkdown(page.content as Parameters<typeof tiptapToMarkdown>[0]);
+                      return `# ${page.title}\n\n${md}`;
+                    });
+                    const markdown = parts.join('\n\n---\n\n');
+                    const blob = new Blob([markdown], { type: 'text/markdown' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${space.slug}-export.md`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    setMessage({ type: 'success', text: `Exported ${pages.length} pages` });
+                  } catch {
+                    setMessage({ type: 'error', text: 'Failed to export pages' });
+                  }
+                  setExporting(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition disabled:opacity-50 shrink-0"
+              >
+                {exporting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                {exporting ? 'Exporting...' : 'Export'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

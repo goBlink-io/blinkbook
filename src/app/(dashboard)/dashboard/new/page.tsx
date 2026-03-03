@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, ArrowRight, Check, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { createStarterTemplate } from '@/lib/starter-template';
 
 const themePresets = [
   { id: 'midnight', name: 'Midnight', colors: { primary: '#2563eb', secondary: '#7c3aed', bg: '#09090b', surface: '#18181b' } },
@@ -106,7 +107,7 @@ export default function NewSpacePage() {
 
       const { id: spaceId } = await res.json();
 
-      // 2. Create the first page
+      // 2. Create the first page with starter template
       const pageTitle = firstPageTitle.trim() || 'Introduction';
       const pageRes = await fetch(`/api/spaces/${spaceId}/pages`, {
         method: 'POST',
@@ -114,6 +115,7 @@ export default function NewSpacePage() {
         body: JSON.stringify({
           title: pageTitle,
           slug: pageSlugify(pageTitle),
+          content: createStarterTemplate(data.name),
         }),
       });
 
