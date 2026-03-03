@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
@@ -6,9 +7,9 @@ import { renderTiptapDoc, extractHeadings, TiptapContent } from '@/components/pu
 import { PageviewTracker } from '@/components/published/pageview-tracker';
 import type { BBPage, BBSpace, TiptapDoc } from '@/types/database';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
-async function getSpaceAndPages(slug: string) {
+const getSpaceAndPages = cache(async function getSpaceAndPages(slug: string) {
   const supabase = await createClient();
 
   // Look up space by slug or custom_domain
@@ -42,7 +43,7 @@ async function getSpaceAndPages(slug: string) {
     .order('position', { ascending: true });
 
   return { space: typedSpace, pages: (pages ?? []) as BBPage[] };
-}
+});
 
 export async function generateMetadata({
   params,
