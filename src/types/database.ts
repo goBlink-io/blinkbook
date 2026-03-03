@@ -26,6 +26,8 @@ export interface BBSpace {
   // Review reminders
   review_reminder_enabled: boolean;
   review_reminder_days: number;
+  // AI-ready docs
+  llms_txt_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
