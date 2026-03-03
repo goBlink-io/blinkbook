@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { SocialProof } from '@/components/auth/social-proof';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -156,6 +157,8 @@ export default function LoginPage() {
           Sign up
         </Link>
       </p>
+
+      <SocialProof />
     </div>
   );
 }
