@@ -27,10 +27,13 @@ export default function EditorPage() {
 
   // SEO fields
   const [seoOpen, setSeoOpen] = useState(false);
+  const [slug, setSlug] = useState('');
+  const [slugError, setSlugError] = useState<string | null>(null);
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
   const [noindex, setNoindex] = useState(false);
   const seoTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const slugTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   // Fetch page and space data
   useEffect(() => {
@@ -52,6 +55,7 @@ export default function EditorPage() {
       setSpace(spaceData);
       setTitle(pageData.title);
       setIsPublished(pageData.is_published);
+      setSlug(pageData.slug);
       setMetaTitle(pageData.meta_title ?? '');
       setMetaDescription(pageData.meta_description ?? '');
       setNoindex(pageData.noindex ?? false);
@@ -62,7 +66,7 @@ export default function EditorPage() {
   }, [siteId, pageId, router]);
 
   // Auto-save with debounce
-  const save = useCallback(async (data: { title?: string; content?: TiptapDoc; is_published?: boolean; meta_title?: string | null; meta_description?: string | null; noindex?: boolean }) => {
+  const save = useCallback(async (data: { title?: string; slug?: string; content?: TiptapDoc; is_published?: boolean; meta_title?: string | null; meta_description?: string | null; noindex?: boolean }) => {
     setSaveStatus('saving');
     try {
       const res = await fetch(`/api/spaces/${siteId}/pages/${pageId}`, {
@@ -132,6 +136,42 @@ export default function EditorPage() {
     save({ noindex: newValue });
   }, [noindex, save]);
 
+  const handleSlugChange = useCallback((value: string) => {
+    // Sanitize: lowercase, only a-z0-9 and hyphens, no leading/trailing hyphens
+    const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+/, '');
+    setSlug(sanitized);
+    setSlugError(null);
+    if (slugTimerRef.current) clearTimeout(slugTimerRef.current);
+    if (!sanitized || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(sanitized)) {
+      if (sanitized) setSlugError('Slug must start and end with a letter or number');
+      return;
+    }
+    setSaveStatus('unsaved');
+    slugTimerRef.current = setTimeout(async () => {
+      setSaveStatus('saving');
+      try {
+        const res = await fetch(`/api/spaces/${siteId}/pages/${pageId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: sanitized }),
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          setPage(updated);
+          setSaveStatus('saved');
+          setSlugError(null);
+        } else {
+          const err = await res.json();
+          setSaveStatus('unsaved');
+          setSlugError(err.error === 'A page with this slug already exists in this space' ? 'Slug already taken' : err.error);
+        }
+      } catch {
+        setSaveStatus('unsaved');
+        setSlugError('Failed to save');
+      }
+    }, 1000);
+  }, [siteId, pageId]);
+
   if (loading || !page || !space) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -151,7 +191,7 @@ export default function EditorPage() {
         isPublished={isPublished}
         onTogglePublish={handleTogglePublish}
         editor={editorRef}
-        pageSlug={page.slug}
+        pageSlug={slug}
         spaceSlug={space.slug}
       />
       <div className="flex-1 overflow-y-auto">
@@ -177,6 +217,27 @@ export default function EditorPage() {
           </button>
           {seoOpen && (
             <div className="px-6 pb-6 space-y-5">
+              <div className="max-w-xl">
+                <label className="block text-sm font-medium text-zinc-300 mb-1.5">URL Slug</label>
+                <div className="flex items-center gap-0">
+                  <span className="px-3 py-2 bg-zinc-900 border border-r-0 border-zinc-700 rounded-l-lg text-xs text-zinc-500 select-none whitespace-nowrap">
+                    {space.custom_domain ? `https://${space.custom_domain}/` : `${space.slug}.blinkbook.goblink.io/`}
+                  </span>
+                  <input
+                    type="text"
+                    value={slug}
+                    onChange={(e) => handleSlugChange(e.target.value)}
+                    className={`flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-r-lg text-white text-sm font-mono focus:outline-none focus:ring-2 transition ${
+                      slugError ? 'focus:ring-red-500 border-red-500/50' : 'focus:ring-blue-500'
+                    }`}
+                    placeholder={page.slug}
+                  />
+                </div>
+                {slugError && (
+                  <p className="text-xs text-red-400 mt-1">{slugError}</p>
+                )}
+                <p className="text-xs text-zinc-600 mt-1">Changing the slug will break existing links to this page.</p>
+              </div>
               <div className="max-w-xl">
                 <label className="block text-sm font-medium text-zinc-300 mb-1.5">Meta Title</label>
                 <input
