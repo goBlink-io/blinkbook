@@ -17,8 +17,25 @@ export interface BBSpace {
   logo_url: string | null;
   custom_domain: string | null;
   is_published: boolean;
+  // Custom branding
+  brand_logo_url: string | null;
+  brand_primary_color: string;
+  brand_accent_color: string;
+  brand_font: string;
+  brand_hide_powered_by: boolean;
+  // Review reminders
+  review_reminder_enabled: boolean;
+  review_reminder_days: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface BBReviewLog {
+  id: string;
+  page_id: string;
+  space_id: string;
+  sent_at: string;
+  sent_to: string;
 }
 
 export interface SpaceTheme {
@@ -39,6 +56,8 @@ export interface BBPage {
   parent_id: string | null;
   position: number;
   is_published: boolean;
+  last_reviewed_at: string | null;
+  review_exempt: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -95,7 +114,48 @@ export interface BBFeedback {
   page_id: string;
   helpful: boolean;
   comment: string | null;
+  user_fingerprint: string | null;
   created_at: string;
+}
+
+export interface BBVersion {
+  id: string;
+  space_id: string;
+  label: string;
+  is_current: boolean;
+  created_at: string;
+}
+
+export interface BBVersionPage {
+  id: string;
+  version_id: string;
+  page_id: string | null;
+  title: string;
+  slug: string;
+  content: TiptapDoc;
+  parent_id: string | null;
+  position: number;
+  created_at: string;
+}
+
+export interface BBPageFeedbackSummary {
+  page_id: string;
+  helpful_count: number;
+  not_helpful_count: number;
+  total: number;
+  helpful_pct: number;
+}
+
+export interface BBBrokenLink {
+  id: string;
+  space_id: string;
+  page_id: string;
+  url: string;
+  link_text: string | null;
+  status_code: number | null;
+  error: string | null;
+  last_checked_at: string;
+  is_broken: boolean;
 }
 
 export interface BBSpaceWithPageCount extends BBSpace {

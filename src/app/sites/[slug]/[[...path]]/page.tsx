@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/server';
 import { PublishedLayout } from '@/components/published/published-layout';
 import { renderTiptapDoc, extractHeadings, TiptapContent } from '@/components/published/tiptap-renderer';
 import { PageviewTracker } from '@/components/published/pageview-tracker';
-import type { BBPage, BBSpace, TiptapDoc } from '@/types/database';
+import { FeedbackWidget } from '@/components/published/feedback-widget';
+import type { BBPage, BBSpace, BBVersion, BBVersionPage, TiptapDoc } from '@/types/database';
 
 export const revalidate = 300;
 
@@ -63,6 +64,26 @@ const getSpaceAndPages = cache(async function getSpaceAndPages(slug: string) {
   return { space: typedSpace, pages: (pages ?? []) as BBPage[] };
 });
 
+const getVersions = cache(async function getVersions(spaceId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('bb_versions')
+    .select('*')
+    .eq('space_id', spaceId)
+    .order('created_at', { ascending: false });
+  return (data ?? []) as BBVersion[];
+});
+
+async function getVersionPages(versionId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('bb_version_pages')
+    .select('*')
+    .eq('version_id', versionId)
+    .order('position', { ascending: true });
+  return (data ?? []) as BBVersionPage[];
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -106,17 +127,54 @@ export async function generateMetadata({
 
 export default async function PublishedSitePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; path?: string[] }>;
+  searchParams: Promise<{ version?: string }>;
 }) {
   const { slug, path } = await params;
+  const { version: versionId } = await searchParams;
   const result = await getSpaceAndPages(slug);
 
   if (!result) {
     notFound();
   }
 
-  const { space, pages: allPages } = result;
+  const { space } = result;
+
+  // Fetch versions for the switcher
+  const versions = await getVersions(space.id);
+
+  // If a specific version is requested, load its snapshot pages
+  let allPages: BBPage[];
+  let activeVersionId: string | undefined;
+
+  if (versionId) {
+    const targetVersion = versions.find((v) => v.id === versionId);
+    if (targetVersion) {
+      const versionPages = await getVersionPages(versionId);
+      // Map version pages to BBPage shape for the layout
+      allPages = versionPages.map((vp) => ({
+        id: vp.page_id ?? vp.id,
+        space_id: space.id,
+        title: vp.title,
+        slug: vp.slug,
+        content: vp.content,
+        parent_id: vp.parent_id,
+        position: vp.position,
+        is_published: true,
+        created_at: vp.created_at,
+        updated_at: vp.created_at,
+        last_reviewed_at: null,
+        review_exempt: false,
+      }));
+      activeVersionId = versionId;
+    } else {
+      allPages = result.pages;
+    }
+  } else {
+    allPages = result.pages;
+  }
 
   if (allPages.length === 0) {
     notFound();
@@ -141,9 +199,12 @@ export default async function PublishedSitePage({
       pages={allPages}
       currentSlug={currentPage.slug}
       headings={headings}
+      versions={versions}
+      currentVersionId={activeVersionId}
     >
       <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">{currentPage.title}</h1>
       <TiptapContent html={html} />
+      <FeedbackWidget spaceId={space.id} pageId={currentPage.id} />
       <PageviewTracker spaceSlug={space.slug} pageId={currentPage.id} />
     </PublishedLayout>
   );

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
+const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+const BRAND_FONTS = ['Inter', 'Roboto', 'Source Sans Pro', 'Merriweather', 'JetBrains Mono'] as const;
+
 const updateSpaceSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   slug: z.string().min(1).max(63).regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/).optional(),
@@ -17,6 +20,15 @@ const updateSpaceSchema = z.object({
   logo_url: z.string().nullable().optional(),
   custom_domain: z.string().nullable().optional(),
   is_published: z.boolean().optional(),
+  // Custom branding
+  brand_logo_url: z.string().url().nullable().optional(),
+  brand_primary_color: z.string().regex(HEX_COLOR).optional(),
+  brand_accent_color: z.string().regex(HEX_COLOR).optional(),
+  brand_font: z.enum(BRAND_FONTS).optional(),
+  brand_hide_powered_by: z.boolean().optional(),
+  // Review reminders
+  review_reminder_enabled: z.boolean().optional(),
+  review_reminder_days: z.number().int().min(7).max(365).optional(),
 });
 
 export async function GET(
