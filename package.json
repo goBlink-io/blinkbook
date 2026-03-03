@@ -38,7 +38,6 @@
     "@tiptap/pm": "^3.20.0",
     "@tiptap/react": "^3.20.0",
     "@tiptap/starter-kit": "^3.20.0",
-    "@urban-blazer/goblink-sdk": "link:/home/urban/.openclaw/workspace/projects/goblink-sdk",
     "flexsearch": "^0.8.212",
     "gray-matter": "^4.0.3",
     "lowlight": "^3.3.0",
