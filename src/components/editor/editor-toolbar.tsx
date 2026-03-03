@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Undo2, Redo2, Eye, EyeOff, ExternalLink, Check, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Undo2, Redo2, Eye, EyeOff, ExternalLink, Check, Loader2, AlertCircle, Download } from 'lucide-react';
+import { tiptapToMarkdown } from '@/lib/tiptap-to-markdown';
+import type { TiptapDoc } from '@/types/database';
 import type { Editor } from '@tiptap/core';
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved';
@@ -106,6 +108,27 @@ export function EditorToolbar({
           >
             <ExternalLink className="w-4 h-4" />
           </a>
+        )}
+
+        {editor && (
+          <button
+            type="button"
+            onClick={() => {
+              const json = editor.getJSON() as TiptapDoc;
+              const markdown = tiptapToMarkdown(json);
+              const blob = new Blob([markdown], { type: 'text/markdown' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${pageSlug || 'page'}.md`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="p-1.5 text-zinc-500 hover:text-white transition rounded"
+            title="Download as Markdown"
+          >
+            <Download className="w-4 h-4" />
+          </button>
         )}
       </div>
     </div>

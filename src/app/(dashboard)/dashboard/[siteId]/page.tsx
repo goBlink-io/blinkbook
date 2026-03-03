@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { Plus, ExternalLink, Globe, FileText, Eye, EyeOff } from 'lucide-react';
+import { QuickStartChecklist } from '@/components/dashboard/quick-start-checklist';
 
 export default async function SpaceOverviewPage({
   params,
@@ -23,12 +24,20 @@ export default async function SpaceOverviewPage({
 
   const { data: pages } = await supabase
     .from('bb_pages')
-    .select('id, title, slug, is_published, updated_at')
+    .select('id, title, slug, content, is_published, updated_at')
     .eq('space_id', siteId)
     .order('position', { ascending: true });
 
   const allPages = pages ?? [];
   const publishedCount = allPages.filter((p) => p.is_published).length;
+
+  // Quick-start checklist data
+  const hasPages = allPages.some(
+    (p) => p.content && Array.isArray(p.content.content) && p.content.content.length > 0
+  );
+  const themePreset = (space.theme?.preset as string) ?? 'midnight';
+  const hasCustomTheme = themePreset !== 'midnight';
+  const hasFavicon = !!space.favicon_url;
 
   return (
     <div>
@@ -71,6 +80,16 @@ export default async function SpaceOverviewPage({
           <p className="text-2xl font-bold text-zinc-400">{allPages.length - publishedCount}</p>
         </div>
       </div>
+
+      {/* Quick-Start Checklist */}
+      <QuickStartChecklist
+        spaceId={siteId}
+        spaceSlug={space.slug}
+        hasPages={hasPages}
+        hasCustomTheme={hasCustomTheme}
+        hasFavicon={hasFavicon}
+        isPublished={space.is_published}
+      />
 
       {/* Pages */}
       <div className="flex items-center justify-between mb-4">
