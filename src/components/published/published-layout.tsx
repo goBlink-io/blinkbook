@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import { PublishedSearch } from './published-search';
-import type { BBSpace, BBPage } from '@/types/database';
+import { PublishedVersionSwitcher } from './published-version-switcher';
+import type { BBSpace, BBPage, BBVersion } from '@/types/database';
 
 interface NavItem {
   id: string;
@@ -94,6 +95,8 @@ interface PublishedLayoutProps {
   pages: BBPage[];
   currentSlug: string;
   headings: TOCItem[];
+  versions?: BBVersion[];
+  currentVersionId?: string;
   children: React.ReactNode;
 }
 
@@ -102,6 +105,8 @@ export function PublishedLayout({
   pages,
   currentSlug,
   headings,
+  versions,
+  currentVersionId,
   children,
 }: PublishedLayoutProps) {
   const navTree = buildNavTree(pages);
@@ -121,7 +126,16 @@ export function PublishedLayout({
             )}
             <span className="text-sm font-bold text-white">{space.name}</span>
           </Link>
-          <PublishedSearch spaceSlug={space.slug} />
+          <div className="flex items-center gap-3">
+            {versions && versions.length > 1 && (
+              <PublishedVersionSwitcher
+                versions={versions}
+                currentVersionId={currentVersionId}
+                spaceSlug={space.slug}
+              />
+            )}
+            <PublishedSearch spaceSlug={space.slug} />
+          </div>
         </div>
       </header>
 

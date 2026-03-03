@@ -98,6 +98,26 @@ export interface BBFeedback {
   created_at: string;
 }
 
+export interface BBVersion {
+  id: string;
+  space_id: string;
+  label: string;
+  is_current: boolean;
+  created_at: string;
+}
+
+export interface BBVersionPage {
+  id: string;
+  version_id: string;
+  page_id: string | null;
+  title: string;
+  slug: string;
+  content: TiptapDoc;
+  parent_id: string | null;
+  position: number;
+  created_at: string;
+}
+
 export interface BBSpaceWithPageCount extends BBSpace {
   page_count: number;
 }
