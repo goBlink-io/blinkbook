@@ -49,6 +49,8 @@ export interface BBPage {
   parent_id: string | null;
   position: number;
   is_published: boolean;
+  last_reviewed_at: string | null;
+  review_exempt: boolean;
   created_at: string;
   updated_at: string;
 }

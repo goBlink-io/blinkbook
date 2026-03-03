@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Plus, FileText, Clock } from 'lucide-react';
+import { Plus, FileText, Clock, CheckCircle, Loader2 } from 'lucide-react';
 import type { BBPage, BBSpace } from '@/types/database';
 
 export default function PagesListPage() {
@@ -12,6 +12,7 @@ export default function PagesListPage() {
   const [space, setSpace] = useState<BBSpace | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [reviewingPageId, setReviewingPageId] = useState<string | null>(null);
 
   const fetchPages = useCallback(async () => {
     const [pagesRes, spaceRes] = await Promise.all([
@@ -45,11 +46,29 @@ export default function PagesListPage() {
   };
 
   const isStale = (page: BBPage): boolean => {
-    if (!space?.review_reminder_enabled) return false;
+    if (!space?.review_reminder_enabled || page.review_exempt) return false;
     const days = space.review_reminder_days ?? 90;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    return new Date(page.updated_at) < cutoff;
+    const lastActivity = page.last_reviewed_at
+      ? new Date(Math.max(new Date(page.updated_at).getTime(), new Date(page.last_reviewed_at).getTime()))
+      : new Date(page.updated_at);
+    return lastActivity < cutoff;
+  };
+
+  const markReviewed = async (e: React.MouseEvent, pageId: string) => {
+    e.stopPropagation();
+    setReviewingPageId(pageId);
+    const res = await fetch(`/api/spaces/${params.siteId}/pages/${pageId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ last_reviewed_at: new Date().toISOString() }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setPages((prev) => prev.map((p) => (p.id === pageId ? updated : p)));
+    }
+    setReviewingPageId(null);
   };
 
   if (loading) {
@@ -110,10 +129,25 @@ export default function PagesListPage() {
                     {new Date(page.updated_at).toLocaleDateString()}
                   </span>
                   {isStale(page) && (
-                    <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-amber-400 bg-amber-500/10">
-                      <Clock className="w-3 h-3" />
-                      Needs review
-                    </span>
+                    <>
+                      <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-amber-400 bg-amber-500/10">
+                        <Clock className="w-3 h-3" />
+                        Needs review
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => markReviewed(e, page.id)}
+                        disabled={reviewingPageId === page.id}
+                        className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-green-400 bg-green-500/10 hover:bg-green-500/20 transition disabled:opacity-50"
+                      >
+                        {reviewingPageId === page.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-3 h-3" />
+                        )}
+                        Mark reviewed
+                      </button>
+                    </>
                   )}
                   <span
                     className={`text-xs px-1.5 py-0.5 rounded ${

@@ -12,6 +12,8 @@ const updatePageSchema = z.object({
   parent_id: z.string().uuid().nullable().optional(),
   position: z.number().int().min(0).optional(),
   is_published: z.boolean().optional(),
+  last_reviewed_at: z.string().datetime().nullable().optional(),
+  review_exempt: z.boolean().optional(),
 });
 
 export async function GET(

@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowLeft, Check, Loader2, Upload, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Upload, Trash2, FileText } from 'lucide-react';
 import { themes, type ThemeName } from '@/config/themes';
-import type { BBSpace } from '@/types/database';
+import type { BBSpace, BBPage } from '@/types/database';
 
 const THEME_NAMES: ThemeName[] = ['midnight', 'ocean', 'forest', 'sunset', 'lavender', 'arctic'];
 type Tab = 'general' | 'branding' | 'domain' | 'reminders' | 'danger';
@@ -32,6 +32,8 @@ export default function SpaceSettingsPage() {
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderDays, setReminderDays] = useState(90);
   const [stalePageCount, setStalePageCount] = useState<number | null>(null);
+  const [trackedPages, setTrackedPages] = useState<BBPage[]>([]);
+  const [savingPageExempt, setSavingPageExempt] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -56,22 +58,33 @@ export default function SpaceSettingsPage() {
     load();
   }, [siteId]);
 
-  // Fetch stale page count when reminder tab is shown or days change
+  // Fetch stale page count and page list when reminder tab is shown or days change
   useEffect(() => {
     if (tab !== 'reminders') return;
-    const fetchStaleCount = async () => {
+    const fetchRemindersData = async () => {
       setStalePageCount(null);
       const supabase = createClient();
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - reminderDays);
-      const { count } = await supabase
-        .from('bb_pages')
-        .select('id', { count: 'exact', head: true })
-        .eq('space_id', siteId)
-        .lt('updated_at', cutoff.toISOString());
-      setStalePageCount(count ?? 0);
+
+      const [countResult, pagesResult] = await Promise.all([
+        supabase
+          .from('bb_pages')
+          .select('id', { count: 'exact', head: true })
+          .eq('space_id', siteId)
+          .eq('review_exempt', false)
+          .lt('updated_at', cutoff.toISOString()),
+        supabase
+          .from('bb_pages')
+          .select('id, title, slug, updated_at, review_exempt')
+          .eq('space_id', siteId)
+          .order('title', { ascending: true }),
+      ]);
+
+      setStalePageCount(countResult.count ?? 0);
+      setTrackedPages((pagesResult.data as BBPage[]) ?? []);
     };
-    fetchStaleCount();
+    fetchRemindersData();
   }, [tab, reminderDays, siteId]);
 
   const save = useCallback(
@@ -408,6 +421,54 @@ export default function SpaceSettingsPage() {
               </p>
             )}
           </div>
+
+          {/* Page tracking */}
+          {trackedPages.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Pages to track
+              </label>
+              <p className="text-xs text-zinc-500 mb-3">
+                Exempt pages won&apos;t trigger review reminders.
+              </p>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl divide-y divide-zinc-800 max-h-64 overflow-y-auto">
+                {trackedPages.map((page) => (
+                  <label
+                    key={page.id}
+                    className="flex items-center justify-between px-4 py-3 hover:bg-zinc-800/50 transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <FileText className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                      <span className="text-sm text-zinc-300 truncate">{page.title}</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={!page.review_exempt}
+                      disabled={savingPageExempt === page.id}
+                      onChange={async () => {
+                        setSavingPageExempt(page.id);
+                        const newExempt = !page.review_exempt;
+                        const res = await fetch(`/api/spaces/${siteId}/pages/${page.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ review_exempt: newExempt }),
+                        });
+                        if (res.ok) {
+                          setTrackedPages((prev) =>
+                            prev.map((p) =>
+                              p.id === page.id ? { ...p, review_exempt: newExempt } : p
+                            )
+                          );
+                        }
+                        setSavingPageExempt(null);
+                      }}
+                      className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 shrink-0"
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={() =>

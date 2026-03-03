@@ -83,15 +83,26 @@ export async function GET(request: Request) {
     const cooldownCutoff = new Date();
     cooldownCutoff.setDate(cooldownCutoff.getDate() - REMINDER_COOLDOWN_DAYS);
 
-    // Find stale pages
-    const { data: stalePages, error: pagesError } = await supabase
+    // Find stale, non-exempt pages
+    const { data: candidatePages, error: pagesError } = await supabase
       .from('bb_pages')
-      .select('id, title, slug, updated_at')
+      .select('id, title, slug, updated_at, last_reviewed_at')
       .eq('space_id', space.id)
+      .eq('review_exempt', false)
       .lt('updated_at', staleCutoff.toISOString())
       .limit(MAX_PAGES_PER_EMAIL);
 
-    if (pagesError || !stalePages || stalePages.length === 0) {
+    if (pagesError || !candidatePages || candidatePages.length === 0) {
+      continue;
+    }
+
+    // Filter out pages that were explicitly reviewed after the cutoff
+    const stalePages = candidatePages.filter(
+      (p: { last_reviewed_at: string | null }) =>
+        !p.last_reviewed_at || new Date(p.last_reviewed_at) < staleCutoff
+    );
+
+    if (stalePages.length === 0) {
       continue;
     }
 
