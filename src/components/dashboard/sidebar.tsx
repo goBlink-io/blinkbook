@@ -166,8 +166,8 @@ function SpaceNav({ siteId, pathname }: { siteId: string; pathname: string }) {
     { href: `/dashboard/${siteId}/analytics`, label: 'Analytics', icon: BarChart3 },
     { href: `/dashboard/${siteId}/versions`, label: 'Versions', icon: GitBranch },
     { href: `/dashboard/${siteId}/links`, label: 'Links', icon: LinkIcon },
-    { href: `/dashboard/${siteId}/access`, label: 'Access', icon: Shield },
-    { href: `/dashboard/${siteId}/monetization`, label: 'Monetization', icon: DollarSign },
+    { href: `/dashboard/${siteId}/access`, label: 'Access', icon: Shield, badge: 'Soon' },
+    { href: `/dashboard/${siteId}/monetization`, label: 'Monetization', icon: DollarSign, badge: 'Soon' },
     { href: `/dashboard/${siteId}/settings`, label: 'Settings', icon: Settings },
     { href: `/dashboard/${siteId}/team`, label: 'Team', icon: isTeamPlan ? Users : Lock },
   ];
@@ -192,6 +192,11 @@ function SpaceNav({ siteId, pathname }: { siteId: string; pathname: string }) {
           >
             <item.icon className="w-4 h-4" />
             {item.label}
+            {item.badge && (
+              <span className="text-xs text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-full ml-auto">
+                {item.badge}
+              </span>
+            )}
           </Link>
         );
       })}
