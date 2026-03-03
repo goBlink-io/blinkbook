@@ -62,7 +62,7 @@ export function FeatureCard({
   const [hovered, setHovered] = useState(false);
   return (
     <div
-      className="group relative rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 hover:border-zinc-700 hover:bg-zinc-900/80 transition-all h-full cursor-default"
+      className="group relative rounded-xl border border-slate-800 bg-slate-900/50 p-6 hover:border-slate-700 hover:bg-slate-900/80 hover:shadow-sm hover:shadow-slate-900/50 transition-all h-full cursor-default"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -70,13 +70,13 @@ export function FeatureCard({
         className={`inline-flex items-center justify-center w-10 h-10 rounded-lg mb-4 transition-colors ${
           hovered
             ? "bg-blue-600/20 text-blue-400"
-            : "bg-zinc-800 text-zinc-400"
+            : "bg-slate-800 text-slate-400"
         }`}
       >
         {icon}
       </div>
-      <h3 className="text-sm font-semibold mb-1.5">{title}</h3>
-      <p className="text-zinc-500 text-sm leading-relaxed">{desc}</p>
+      <h3 className="text-base font-semibold mb-1.5">{title}</h3>
+      <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
     </div>
   );
 }
@@ -101,19 +101,16 @@ export function SmoothScrollHandler() {
   return null;
 }
 
-/* ─── Animated gradient background ─── */
-export function AnimatedBackground() {
+/* ─── Static grain texture overlay ─── */
+export function GrainOverlay() {
   return (
-    <div className="fixed inset-0 -z-10 pointer-events-none">
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% -20%, rgba(37,99,235,0.12), transparent 70%), radial-gradient(ellipse 60% 50% at 80% 50%, rgba(124,58,237,0.06), transparent 60%)",
-          animation: "drift 20s ease-in-out infinite alternate",
-        }}
-      />
-      <style>{`@keyframes drift { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }`}</style>
-    </div>
+    <div
+      className="fixed inset-0 -z-10 pointer-events-none opacity-[0.03]"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        backgroundRepeat: "repeat",
+        backgroundSize: "256px 256px",
+      }}
+    />
   );
 }
