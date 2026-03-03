@@ -146,6 +146,18 @@ export interface BBPageFeedbackSummary {
   helpful_pct: number;
 }
 
+export interface BBBrokenLink {
+  id: string;
+  space_id: string;
+  page_id: string;
+  url: string;
+  link_text: string | null;
+  status_code: number | null;
+  error: string | null;
+  last_checked_at: string;
+  is_broken: boolean;
+}
+
 export interface BBSpaceWithPageCount extends BBSpace {
   page_count: number;
 }
