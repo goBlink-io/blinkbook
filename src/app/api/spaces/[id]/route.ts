@@ -31,6 +31,12 @@ const updateSpaceSchema = z.object({
   review_reminder_days: z.number().int().min(7).max(365).optional(),
   // AI-ready docs
   llms_txt_enabled: z.boolean().optional(),
+  // SEO
+  meta_title: z.string().max(200).nullable().optional(),
+  meta_description: z.string().max(500).nullable().optional(),
+  og_image_url: z.string().url().nullable().optional(),
+  favicon_url: z.string().url().nullable().optional(),
+  social_twitter: z.string().max(50).nullable().optional(),
 });
 
 export async function GET(
