@@ -6,7 +6,8 @@ import { PublishedLayout } from '@/components/published/published-layout';
 import { renderTiptapDoc, extractHeadings, TiptapContent } from '@/components/published/tiptap-renderer';
 import { PageviewTracker } from '@/components/published/pageview-tracker';
 import { FeedbackWidget } from '@/components/published/feedback-widget';
-import type { BBPage, BBSpace, BBVersion, BBVersionPage, TiptapDoc } from '@/types/database';
+import { TokenGate } from '@/components/published/token-gate';
+import type { BBAccessRule, BBPage, BBSpace, BBVersion, BBVersionPage, TiptapDoc } from '@/types/database';
 
 export const revalidate = 300;
 
@@ -163,6 +164,7 @@ export default async function PublishedSitePage({
         parent_id: vp.parent_id,
         position: vp.position,
         is_published: true,
+        is_gated: false,
         created_at: vp.created_at,
         updated_at: vp.created_at,
         last_reviewed_at: null,
@@ -186,6 +188,33 @@ export default async function PublishedSitePage({
 
   if (!currentPage) {
     notFound();
+  }
+
+  // Check if space or page is gated
+  if (space.is_gated || currentPage.is_gated) {
+    const supabase = await createClient();
+    const { data: accessRules } = await supabase
+      .from('bb_access_rules')
+      .select('*')
+      .eq('space_id', space.id)
+      .eq('is_active', true);
+
+    const rules = (accessRules ?? []) as BBAccessRule[];
+
+    if (rules.length > 0) {
+      return (
+        <PublishedLayout
+          space={space}
+          pages={allPages}
+          currentSlug={currentPage.slug}
+          headings={[]}
+          versions={versions}
+          currentVersionId={activeVersionId}
+        >
+          <TokenGate rules={rules} spaceName={space.name} />
+        </PublishedLayout>
+      );
+    }
   }
 
   // Use pre-rendered HTML from static bundle, or render on the fly
