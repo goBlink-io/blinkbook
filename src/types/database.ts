@@ -17,8 +17,18 @@ export interface BBSpace {
   logo_url: string | null;
   custom_domain: string | null;
   is_published: boolean;
+  review_reminder_enabled: boolean;
+  review_reminder_days: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface BBReviewLog {
+  id: string;
+  page_id: string;
+  space_id: string;
+  sent_at: string;
+  sent_to: string;
 }
 
 export interface SpaceTheme {

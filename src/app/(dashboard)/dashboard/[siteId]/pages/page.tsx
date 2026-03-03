@@ -2,19 +2,24 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Plus, FileText } from 'lucide-react';
-import type { BBPage } from '@/types/database';
+import { Plus, FileText, Clock } from 'lucide-react';
+import type { BBPage, BBSpace } from '@/types/database';
 
 export default function PagesListPage() {
   const params = useParams<{ siteId: string }>();
   const router = useRouter();
   const [pages, setPages] = useState<BBPage[]>([]);
+  const [space, setSpace] = useState<BBSpace | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
   const fetchPages = useCallback(async () => {
-    const res = await fetch(`/api/spaces/${params.siteId}/pages`);
-    if (res.ok) setPages(await res.json());
+    const [pagesRes, spaceRes] = await Promise.all([
+      fetch(`/api/spaces/${params.siteId}/pages`),
+      fetch(`/api/spaces/${params.siteId}`),
+    ]);
+    if (pagesRes.ok) setPages(await pagesRes.json());
+    if (spaceRes.ok) setSpace(await spaceRes.json());
     setLoading(false);
   }, [params.siteId]);
 
@@ -37,6 +42,14 @@ export default function PagesListPage() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const isStale = (page: BBPage): boolean => {
+    if (!space?.review_reminder_enabled) return false;
+    const days = space.review_reminder_days ?? 90;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return new Date(page.updated_at) < cutoff;
   };
 
   if (loading) {
@@ -96,6 +109,12 @@ export default function PagesListPage() {
                   <span className="text-xs text-zinc-500">
                     {new Date(page.updated_at).toLocaleDateString()}
                   </span>
+                  {isStale(page) && (
+                    <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded text-amber-400 bg-amber-500/10">
+                      <Clock className="w-3 h-3" />
+                      Needs review
+                    </span>
+                  )}
                   <span
                     className={`text-xs px-1.5 py-0.5 rounded ${
                       page.is_published

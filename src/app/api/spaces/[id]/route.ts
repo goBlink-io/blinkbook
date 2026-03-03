@@ -17,6 +17,8 @@ const updateSpaceSchema = z.object({
   logo_url: z.string().nullable().optional(),
   custom_domain: z.string().nullable().optional(),
   is_published: z.boolean().optional(),
+  review_reminder_enabled: z.boolean().optional(),
+  review_reminder_days: z.number().int().min(7).max(365).optional(),
 });
 
 export async function GET(

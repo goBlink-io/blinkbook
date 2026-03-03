@@ -9,7 +9,7 @@ import { themes, type ThemeName } from '@/config/themes';
 import type { BBSpace } from '@/types/database';
 
 const THEME_NAMES: ThemeName[] = ['midnight', 'ocean', 'forest', 'sunset', 'lavender', 'arctic'];
-type Tab = 'general' | 'branding' | 'domain' | 'danger';
+type Tab = 'general' | 'branding' | 'domain' | 'reminders' | 'danger';
 
 export default function SpaceSettingsPage() {
   const { siteId } = useParams<{ siteId: string }>();
@@ -28,6 +28,11 @@ export default function SpaceSettingsPage() {
   const [customDomain, setCustomDomain] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState('');
 
+  // Review reminders state
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderDays, setReminderDays] = useState(90);
+  const [stalePageCount, setStalePageCount] = useState<number | null>(null);
+
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
@@ -43,11 +48,31 @@ export default function SpaceSettingsPage() {
         setDescription(data.description ?? '');
         setSelectedTheme((data.theme?.preset as ThemeName) ?? 'midnight');
         setCustomDomain(data.custom_domain ?? '');
+        setReminderEnabled(data.review_reminder_enabled ?? false);
+        setReminderDays(data.review_reminder_days ?? 90);
       }
       setLoading(false);
     };
     load();
   }, [siteId]);
+
+  // Fetch stale page count when reminder tab is shown or days change
+  useEffect(() => {
+    if (tab !== 'reminders') return;
+    const fetchStaleCount = async () => {
+      setStalePageCount(null);
+      const supabase = createClient();
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - reminderDays);
+      const { count } = await supabase
+        .from('bb_pages')
+        .select('id', { count: 'exact', head: true })
+        .eq('space_id', siteId)
+        .lt('updated_at', cutoff.toISOString());
+      setStalePageCount(count ?? 0);
+    };
+    fetchStaleCount();
+  }, [tab, reminderDays, siteId]);
 
   const save = useCallback(
     async (updates: Record<string, unknown>) => {
@@ -103,6 +128,7 @@ export default function SpaceSettingsPage() {
     { key: 'general', label: 'General' },
     { key: 'branding', label: 'Branding' },
     { key: 'domain', label: 'Domain' },
+    { key: 'reminders', label: 'Review Reminders' },
     { key: 'danger', label: 'Danger Zone' },
   ];
 
@@ -303,6 +329,98 @@ export default function SpaceSettingsPage() {
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             Save & Verify
+          </button>
+        </div>
+      )}
+
+      {/* Review Reminders */}
+      {tab === 'reminders' && (
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1">Review Reminders</h3>
+            <p className="text-xs text-zinc-500 mb-5">
+              Get email alerts when pages haven&apos;t been updated in a while.
+            </p>
+          </div>
+
+          {/* Enable toggle */}
+          <div className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4">
+            <div>
+              <p className="text-sm font-medium text-white">Enable review reminders</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Send periodic emails listing pages that need attention</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReminderEnabled((v) => !v)}
+              className={`relative inline-flex w-11 h-6 rounded-full transition-colors ${
+                reminderEnabled ? 'bg-blue-600' : 'bg-zinc-700'
+              }`}
+              role="switch"
+              aria-checked={reminderEnabled}
+            >
+              <span
+                className={`inline-block w-4 h-4 bg-white rounded-full shadow transition-transform mt-1 ${
+                  reminderEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Days selector */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">
+              Days before a page is considered stale
+            </label>
+            <div className="flex gap-2">
+              {[30, 60, 90, 180].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setReminderDays(d)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition border ${
+                    reminderDays === d
+                      ? 'bg-blue-600 border-blue-500 text-white'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
+                  }`}
+                >
+                  {d}d
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Stale page preview */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4">
+            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide mb-1">Preview</p>
+            {stalePageCount === null ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-zinc-700 border-t-blue-500 rounded-full animate-spin" />
+                <span className="text-sm text-zinc-500">Counting stale pages…</span>
+              </div>
+            ) : (
+              <p className="text-sm text-zinc-300">
+                <span className={`font-semibold ${stalePageCount > 0 ? 'text-amber-400' : 'text-green-400'}`}>
+                  {stalePageCount}
+                </span>
+                {' '}
+                {stalePageCount === 1 ? 'page has' : 'pages have'} not been updated in over{' '}
+                <span className="text-white font-medium">{reminderDays} days</span>
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={() =>
+              save({
+                review_reminder_enabled: reminderEnabled,
+                review_reminder_days: reminderDays,
+              })
+            }
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg transition"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            Save Reminder Settings
           </button>
         </div>
       )}
