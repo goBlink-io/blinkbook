@@ -32,7 +32,7 @@ export function EditorToolbar({
   spaceSlug,
 }: EditorToolbarProps) {
   return (
-    <div className="flex items-center justify-between h-12 px-4 border-b border-zinc-800 bg-zinc-950 shrink-0">
+    <div className="flex items-center justify-between h-12 pl-12 lg:pl-4 pr-4 border-b border-zinc-800 bg-zinc-950 shrink-0">
       <div className="flex items-center gap-3 min-w-0">
         <Link
           href={`/dashboard/${siteId}`}
@@ -43,8 +43,8 @@ export function EditorToolbar({
         </Link>
 
         <div className="flex items-center gap-1.5 text-sm min-w-0">
-          <span className="text-zinc-500 shrink-0">{spaceName}</span>
-          <span className="text-zinc-600 shrink-0">/</span>
+          <span className="text-zinc-500 shrink-0 hidden sm:inline">{spaceName}</span>
+          <span className="text-zinc-600 shrink-0 hidden sm:inline">/</span>
           <input
             type="text"
             value={pageTitle}

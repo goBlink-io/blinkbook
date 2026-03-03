@@ -511,49 +511,56 @@ export default function LandingPage() {
           </p>
         </Section>
         <Section>
-          <div className="overflow-x-auto rounded-xl border border-zinc-800">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-zinc-900/80 border-b border-zinc-800">
-                  <th className="text-left px-5 py-4 font-semibold text-zinc-300 w-[180px]">
-                    Feature
-                  </th>
-                  <th className="px-5 py-4 font-semibold text-center">
-                    <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
-                      goBlink Book
-                    </span>
-                  </th>
-                  <th className="px-5 py-4 font-semibold text-zinc-500 text-center">GitBook</th>
-                  <th className="px-5 py-4 font-semibold text-zinc-500 text-center">Mintlify</th>
-                  <th className="px-5 py-4 font-semibold text-zinc-500 text-center">Docusaurus</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparison.map((row, i) => (
-                  <tr
-                    key={row.feature}
-                    className={`border-b border-zinc-800/50 ${
-                      i % 2 === 0 ? "bg-zinc-900/20" : ""
-                    }`}
-                  >
-                    <td className="px-5 py-3 font-medium text-zinc-300">{row.feature}</td>
-                    <td className="px-5 py-3 text-center">
-                      <BlinkBookCell value={row.blinkbook} />
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      <ComparisonCell value={row.gitbook} />
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      <ComparisonCell value={row.mintlify} />
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      <ComparisonCell value={row.docusaurus} />
-                    </td>
+          <div className="relative">
+            <div className="overflow-x-auto rounded-xl border border-zinc-800">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-zinc-900/80 border-b border-zinc-800">
+                    <th className="text-left px-5 py-4 font-semibold text-zinc-300 w-[180px]">
+                      Feature
+                    </th>
+                    <th className="px-5 py-4 font-semibold text-center">
+                      <span className="bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
+                        goBlink Book
+                      </span>
+                    </th>
+                    <th className="px-5 py-4 font-semibold text-zinc-500 text-center">GitBook</th>
+                    <th className="px-5 py-4 font-semibold text-zinc-500 text-center">Mintlify</th>
+                    <th className="px-5 py-4 font-semibold text-zinc-500 text-center">Docusaurus</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {comparison.map((row, i) => (
+                    <tr
+                      key={row.feature}
+                      className={`border-b border-zinc-800/50 ${
+                        i % 2 === 0 ? "bg-zinc-900/20" : ""
+                      }`}
+                    >
+                      <td className="px-5 py-3 font-medium text-zinc-300">{row.feature}</td>
+                      <td className="px-5 py-3 text-center">
+                        <BlinkBookCell value={row.blinkbook} />
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <ComparisonCell value={row.gitbook} />
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <ComparisonCell value={row.mintlify} />
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        <ComparisonCell value={row.docusaurus} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Scroll fade hint on right edge — mobile only */}
+            <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-zinc-950 to-transparent pointer-events-none rounded-r-xl md:hidden" />
           </div>
+          <p className="text-center text-xs text-zinc-600 mt-3 md:hidden">
+            Swipe to compare &rarr;
+          </p>
         </Section>
       </section>
 

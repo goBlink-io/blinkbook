@@ -312,23 +312,27 @@ export default function SpaceSettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-zinc-800 mb-8">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => {
-              setTab(t.key);
-              setMessage(null);
-            }}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${
-              tab === t.key
-                ? 'border-blue-500 text-white'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="relative mb-8">
+        <div className="flex gap-1 border-b border-zinc-800 overflow-x-auto scrollbar-hide">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => {
+                setTab(t.key);
+                setMessage(null);
+              }}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px whitespace-nowrap shrink-0 ${
+                tab === t.key
+                  ? 'border-blue-500 text-white'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {/* Fade hint for scrollable tabs */}
+        <div className="absolute top-0 right-0 bottom-px w-8 bg-gradient-to-l from-zinc-950 to-transparent pointer-events-none md:hidden" />
       </div>
 
       {/* General */}
