@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { BookOpen, LayoutGrid, User, CreditCard, LogOut, Users, Lock, Settings, BarChart3, FileText, GitBranch, LinkIcon } from 'lucide-react';
+import { BookOpen, LayoutGrid, User, CreditCard, LogOut, Users, Lock, Settings, BarChart3, FileText, GitBranch, LinkIcon, DollarSign } from 'lucide-react';
 
 interface SidebarProps {
   user: {
@@ -115,6 +115,7 @@ function SpaceNav({ siteId, pathname }: { siteId: string; pathname: string }) {
     { href: `/dashboard/${siteId}/analytics`, label: 'Analytics', icon: BarChart3 },
     { href: `/dashboard/${siteId}/versions`, label: 'Versions', icon: GitBranch },
     { href: `/dashboard/${siteId}/links`, label: 'Links', icon: LinkIcon },
+    { href: `/dashboard/${siteId}/monetization`, label: 'Monetization', icon: DollarSign },
     { href: `/dashboard/${siteId}/settings`, label: 'Settings', icon: Settings },
     { href: `/dashboard/${siteId}/team`, label: 'Team', icon: isTeamPlan ? Users : Lock },
   ];

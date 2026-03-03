@@ -26,6 +26,9 @@ export interface BBSpace {
   // Review reminders
   review_reminder_enabled: boolean;
   review_reminder_days: number;
+  // Monetization
+  monetization_enabled: boolean;
+  payout_wallet: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +59,7 @@ export interface BBPage {
   parent_id: string | null;
   position: number;
   is_published: boolean;
+  is_premium: boolean;
   last_reviewed_at: string | null;
   review_exempt: boolean;
   created_at: string;
@@ -156,6 +160,27 @@ export interface BBBrokenLink {
   error: string | null;
   last_checked_at: string;
   is_broken: boolean;
+}
+
+export interface BBPaidContent {
+  id: string;
+  space_id: string;
+  page_id: string | null;
+  price_usd: number;
+  accepted_tokens: string[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface BBPurchase {
+  id: string;
+  paid_content_id: string;
+  buyer_wallet: string;
+  buyer_chain: string;
+  tx_hash: string;
+  amount_usd: number;
+  status: 'pending' | 'confirmed' | 'failed';
+  created_at: string;
 }
 
 export interface BBSpaceWithPageCount extends BBSpace {
