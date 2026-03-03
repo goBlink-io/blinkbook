@@ -278,12 +278,29 @@ body {
 .bb-content {
   line-height: 1.8;
   color: #d4d4d8;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .bb-content p { margin-bottom: 1.25rem; }
 .bb-content h1 { font-size: 2rem; font-weight: 700; color: #fafafa; margin: 2.5rem 0 1rem; letter-spacing: -0.025em; }
 .bb-content h2 { font-size: 1.5rem; font-weight: 600; color: #fafafa; margin: 2.5rem 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #27272a; }
 .bb-content h3 { font-size: 1.25rem; font-weight: 600; color: #fafafa; margin: 2rem 0 0.5rem; }
 .bb-content h4 { font-size: 1.1rem; font-weight: 600; color: #fafafa; margin: 1.5rem 0 0.5rem; }
+.bb-content code {
+  background: #27272a;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  word-break: break-all;
+}
+.bb-content pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  word-break: normal;
+}
 .bb-content a { color: var(--brand-primary, #2563eb); text-decoration: none; font-weight: 500; }
 .bb-content a:hover { text-decoration: underline; }
 .bb-content strong { font-weight: 600; color: #fafafa; }
@@ -297,8 +314,13 @@ body {
   color: #a1a1aa;
   font-style: italic;
 }
-.bb-content table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
-.bb-content th { background: #18181b; text-align: left; padding: 0.75rem 1rem; font-weight: 600; border-bottom: 1px solid #27272a; color: #fafafa; }
+.bb-content .bb-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.5rem 0;
+}
+.bb-content table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 400px; }
+.bb-content th { background: #18181b; text-align: left; padding: 0.75rem 1rem; font-weight: 600; border-bottom: 1px solid #27272a; color: #fafafa; white-space: nowrap; }
 .bb-content td { padding: 0.75rem 1rem; border-bottom: 1px solid #27272a; }
 .bb-content tr:hover { background: #18181b; }
 .bb-content hr { border: none; border-top: 1px solid #27272a; margin: 2rem 0; }
@@ -343,3 +365,12 @@ body {
 .bb-content .bb-callout-icon { font-size: 1.25rem; line-height: 1; padding-top: 0.125rem; }
 .bb-content .bb-callout-content { flex: 1; min-width: 0; }
 .bb-content .bb-callout-content p:last-child { margin-bottom: 0; }
+
+/* Mobile content adjustments */
+@media (max-width: 640px) {
+  .bb-content h1 { font-size: 1.625rem; }
+  .bb-content h2 { font-size: 1.3rem; }
+  .bb-content h3 { font-size: 1.125rem; }
+  .bb-content .bb-code-block pre { font-size: 0.8rem; padding: 0.75rem; }
+  .bb-content .bb-callout { padding: 0.75rem; gap: 0.5rem; }
+}
