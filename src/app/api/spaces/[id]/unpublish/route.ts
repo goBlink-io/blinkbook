@@ -22,5 +22,10 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Clean up storage artifacts
+  await supabase.storage
+    .from('published-sites')
+    .remove([`${id}/static-bundle.json`, `${id}/search-index.json`]);
+
   return NextResponse.json({ published: false });
 }

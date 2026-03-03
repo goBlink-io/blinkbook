@@ -34,6 +34,24 @@ async function getSpaceAndPages(slug: string) {
 
   const typedSpace = space as BBSpace;
 
+  // Try loading pre-rendered static bundle from storage first
+  const { data: bundleData } = await supabase.storage
+    .from('published-sites')
+    .download(`${typedSpace.id}/static-bundle.json`);
+
+  if (bundleData) {
+    try {
+      const bundle = JSON.parse(await bundleData.text());
+      return {
+        space: typedSpace,
+        pages: bundle.pages as (BBPage & { renderedHtml: string; headings: { id: string; text: string; level: number }[] })[],
+      };
+    } catch {
+      // Fall through to Postgres query
+    }
+  }
+
+  // Fall back to Postgres query for pages
   const { data: pages } = await supabase
     .from('bb_pages')
     .select('*')
@@ -111,9 +129,10 @@ export default async function PublishedSitePage({
     notFound();
   }
 
-  // Render content
-  const html = renderTiptapDoc(currentPage.content as TiptapDoc);
-  const headings = extractHeadings(currentPage.content as TiptapDoc);
+  // Use pre-rendered HTML from static bundle, or render on the fly
+  const bundlePage = currentPage as BBPage & { renderedHtml?: string; headings?: { id: string; text: string; level: number }[] };
+  const html = bundlePage.renderedHtml ?? renderTiptapDoc(currentPage.content as TiptapDoc);
+  const headings = bundlePage.headings ?? extractHeadings(currentPage.content as TiptapDoc);
 
   return (
     <PublishedLayout
