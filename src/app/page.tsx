@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Blocks,
@@ -25,93 +22,52 @@ import {
   BookOpen,
   Rocket,
 } from "lucide-react";
-
-/* ─── Scroll animation hook ─── */
-function useInView(threshold = 0.12) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, visible };
-}
-
-function Section({
-  children,
-  className = "",
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const { ref, visible } = useInView();
-  return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(32px)",
-        transition: `opacity 0.7s cubic-bezier(.16,1,.3,1) ${delay}ms, transform 0.7s cubic-bezier(.16,1,.3,1) ${delay}ms`,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
+import {
+  Section,
+  FeatureCard,
+  SmoothScrollHandler,
+  AnimatedBackground,
+} from "@/components/landing/client-parts";
 
 /* ─── Features data ─── */
 const features = [
   {
-    icon: Blocks,
+    icon: <Blocks className="w-5 h-5" />,
     title: "Block Editor",
     desc: "Tiptap-powered block editor with slash commands, drag-and-drop, and 20+ content blocks.",
   },
   {
-    icon: Search,
+    icon: <Search className="w-5 h-5" />,
     title: "Instant Search",
     desc: "Client-side full-text search. Fast, zero-cost, works offline.",
   },
   {
-    icon: Globe,
+    icon: <Globe className="w-5 h-5" />,
     title: "Custom Domains",
     desc: "Connect your own domain with automatic SSL. Your docs, your brand.",
   },
   {
-    icon: Users,
+    icon: <Users className="w-5 h-5" />,
     title: "Team Collaboration",
     desc: "Invite team members with role-based access. Admin, Editor, and Viewer roles.",
   },
   {
-    icon: BarChart3,
+    icon: <BarChart3 className="w-5 h-5" />,
     title: "Analytics",
     desc: "Track page views, popular docs, and reader engagement. No third-party scripts.",
   },
   {
-    icon: Palette,
+    icon: <Palette className="w-5 h-5" />,
     title: "6 Themes",
     desc: "Pick from Midnight, Ocean, Forest, Sunset, Lavender, or Arctic. Or customize your own.",
   },
   {
-    icon: Code2,
+    icon: <Code2 className="w-5 h-5" />,
     title: "API Playground",
     desc: "Interactive API explorer built in. Let developers test endpoints right from your docs.",
   },
   {
-    icon: DollarSign,
+    icon: <DollarSign className="w-5 h-5" />,
     title: "Flat Pricing",
     desc: "No per-seat fees. One price covers your whole team. Start free, upgrade when ready.",
   },
@@ -119,24 +75,9 @@ const features = [
 
 /* ─── How it works ─── */
 const steps = [
-  {
-    icon: Zap,
-    step: "1",
-    title: "Sign up",
-    desc: "Create your free account in seconds. No credit card required.",
-  },
-  {
-    icon: BookOpen,
-    step: "2",
-    title: "Create your space",
-    desc: "Pick a template, choose a theme, and start writing with our block editor.",
-  },
-  {
-    icon: Rocket,
-    step: "3",
-    title: "Publish",
-    desc: "Hit publish and your docs are live. Add a custom domain when you're ready.",
-  },
+  { icon: Zap, step: "1", title: "Sign up", desc: "Create your free account in seconds. No credit card required." },
+  { icon: BookOpen, step: "2", title: "Create your space", desc: "Pick a template, choose a theme, and start writing with our block editor." },
+  { icon: Rocket, step: "3", title: "Publish", desc: "Hit publish and your docs are live. Add a custom domain when you're ready." },
 ];
 
 /* ─── Editor blocks for showcase ─── */
@@ -248,38 +189,10 @@ function BlinkBookCell({ value }: { value: string | boolean }) {
 }
 
 export default function LandingPage() {
-  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const anchor = target.closest("a");
-      if (anchor?.hash) {
-        const el = document.querySelector(anchor.hash);
-        if (el) {
-          e.preventDefault();
-          el.scrollIntoView({ behavior: "smooth" });
-        }
-      }
-    };
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, []);
-
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 overflow-x-hidden">
-      {/* Animated gradient bg */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 50% -20%, rgba(37,99,235,0.12), transparent 70%), radial-gradient(ellipse 60% 50% at 80% 50%, rgba(124,58,237,0.06), transparent 60%)",
-            animation: "drift 20s ease-in-out infinite alternate",
-          }}
-        />
-        <style>{`@keyframes drift { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }`}</style>
-      </div>
+      <SmoothScrollHandler />
+      <AnimatedBackground />
 
       {/* ═══ NAV ═══ */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl">
@@ -451,30 +364,11 @@ export default function LandingPage() {
           </p>
         </Section>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {features.map((f, i) => {
-            const Icon = f.icon;
-            return (
-              <Section key={f.title} delay={i * 50}>
-                <div
-                  className="group relative rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 hover:border-zinc-700 hover:bg-zinc-900/80 transition-all h-full cursor-default"
-                  onMouseEnter={() => setHoveredFeature(i)}
-                  onMouseLeave={() => setHoveredFeature(null)}
-                >
-                  <div
-                    className={`inline-flex items-center justify-center w-10 h-10 rounded-lg mb-4 transition-colors ${
-                      hoveredFeature === i
-                        ? "bg-blue-600/20 text-blue-400"
-                        : "bg-zinc-800 text-zinc-400"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <h3 className="text-sm font-semibold mb-1.5">{f.title}</h3>
-                  <p className="text-zinc-500 text-sm leading-relaxed">{f.desc}</p>
-                </div>
-              </Section>
-            );
-          })}
+          {features.map((f, i) => (
+            <Section key={f.title} delay={i * 50}>
+              <FeatureCard icon={f.icon} title={f.title} desc={f.desc} />
+            </Section>
+          ))}
         </div>
       </section>
 

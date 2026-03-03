@@ -4,14 +4,14 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowLeft, Check, Loader2, Upload, Trash2, Image as ImageIcon, X, FileText } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Upload, Trash2, Image as ImageIcon, X, FileText, Search, Globe } from 'lucide-react';
 import { themes, type ThemeName } from '@/config/themes';
 import type { BBSpace, BBPage } from '@/types/database';
 
 const THEME_NAMES: ThemeName[] = ['midnight', 'ocean', 'forest', 'sunset', 'lavender', 'arctic'];
 const BRAND_FONTS = ['Inter', 'Roboto', 'Source Sans Pro', 'Merriweather', 'JetBrains Mono'] as const;
 type BrandFont = (typeof BRAND_FONTS)[number];
-type Tab = 'general' | 'branding' | 'domain' | 'reminders' | 'ai' | 'danger';
+type Tab = 'general' | 'branding' | 'domain' | 'seo' | 'reminders' | 'ai' | 'danger';
 
 export default function SpaceSettingsPage() {
   const { siteId } = useParams<{ siteId: string }>();
@@ -41,6 +41,17 @@ export default function SpaceSettingsPage() {
 
   // AI & Integrations state
   const [llmsTxtEnabled, setLlmsTxtEnabled] = useState(true);
+
+  // SEO state
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [ogImageUrl, setOgImageUrl] = useState<string | null>(null);
+  const [ogImageUploading, setOgImageUploading] = useState(false);
+  const ogImageInputRef = useRef<HTMLInputElement>(null);
+  const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
+  const [faviconUploading, setFaviconUploading] = useState(false);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
+  const [socialTwitter, setSocialTwitter] = useState('');
 
   // Review reminders state
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -72,6 +83,11 @@ export default function SpaceSettingsPage() {
         setReminderEnabled(data.review_reminder_enabled ?? false);
         setReminderDays(data.review_reminder_days ?? 90);
         setLlmsTxtEnabled(data.llms_txt_enabled ?? true);
+        setMetaTitle(data.meta_title ?? '');
+        setMetaDescription(data.meta_description ?? '');
+        setOgImageUrl(data.og_image_url ?? null);
+        setFaviconUrl(data.favicon_url ?? null);
+        setSocialTwitter(data.social_twitter ?? '');
       }
       setLoading(false);
     };
@@ -176,6 +192,76 @@ export default function SpaceSettingsPage() {
     setLogoUploading(false);
   };
 
+  const handleOgImageUpload = async (file: File) => {
+    setOgImageUploading(true);
+    setMessage(null);
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`/api/spaces/${siteId}/og-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMessage({ type: 'error', text: data.error });
+    } else {
+      setOgImageUrl(data.url);
+      setSpace(data.space);
+      setMessage({ type: 'success', text: 'OG image uploaded' });
+    }
+    setOgImageUploading(false);
+  };
+
+  const handleOgImageRemove = async () => {
+    setOgImageUploading(true);
+    setMessage(null);
+    const res = await fetch(`/api/spaces/${siteId}/og-image`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) {
+      setMessage({ type: 'error', text: data.error });
+    } else {
+      setOgImageUrl(null);
+      setSpace(data.space);
+      setMessage({ type: 'success', text: 'OG image removed' });
+    }
+    setOgImageUploading(false);
+  };
+
+  const handleFaviconUpload = async (file: File) => {
+    setFaviconUploading(true);
+    setMessage(null);
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`/api/spaces/${siteId}/favicon`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMessage({ type: 'error', text: data.error });
+    } else {
+      setFaviconUrl(data.url);
+      setSpace(data.space);
+      setMessage({ type: 'success', text: 'Favicon uploaded' });
+    }
+    setFaviconUploading(false);
+  };
+
+  const handleFaviconRemove = async () => {
+    setFaviconUploading(true);
+    setMessage(null);
+    const res = await fetch(`/api/spaces/${siteId}/favicon`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) {
+      setMessage({ type: 'error', text: data.error });
+    } else {
+      setFaviconUrl(null);
+      setSpace(data.space);
+      setMessage({ type: 'success', text: 'Favicon removed' });
+    }
+    setFaviconUploading(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -196,6 +282,7 @@ export default function SpaceSettingsPage() {
     { key: 'general', label: 'General' },
     { key: 'branding', label: 'Branding' },
     { key: 'domain', label: 'Domain' },
+    { key: 'seo', label: 'SEO' },
     { key: 'reminders', label: 'Review Reminders' },
     { key: 'ai', label: 'AI & Integrations' },
     { key: 'danger', label: 'Danger Zone' },
@@ -616,6 +703,230 @@ export default function SpaceSettingsPage() {
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
             Save & Verify
+          </button>
+        </div>
+      )}
+
+      {/* SEO */}
+      {tab === 'seo' && (
+        <div className="space-y-10">
+          {/* Meta Title */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1.5">Meta Title</h3>
+            <p className="text-xs text-zinc-500 mb-3">
+              Overrides the default title in search results and social shares.
+            </p>
+            <input
+              type="text"
+              value={metaTitle}
+              onChange={(e) => setMetaTitle(e.target.value)}
+              placeholder={space.name}
+              className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            />
+          </section>
+
+          {/* Meta Description */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1.5">Meta Description</h3>
+            <p className="text-xs text-zinc-500 mb-3">
+              Shown below the title in search results. Aim for 150–160 characters.
+            </p>
+            <textarea
+              value={metaDescription}
+              onChange={(e) => setMetaDescription(e.target.value)}
+              rows={3}
+              placeholder="A concise description of your documentation site…"
+              className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
+            />
+            <div className="flex justify-end mt-1.5">
+              <span
+                className={`text-xs ${
+                  metaDescription.length >= 150 && metaDescription.length <= 160
+                    ? 'text-green-400'
+                    : metaDescription.length > 160
+                      ? 'text-amber-400'
+                      : 'text-zinc-500'
+                }`}
+              >
+                {metaDescription.length}/160
+              </span>
+            </div>
+          </section>
+
+          {/* OG Image Upload */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1.5">Social Share Image (OG Image)</h3>
+            <p className="text-xs text-zinc-500 mb-4">
+              Shown when your site is shared on social media. Recommended: 1200×630px. PNG, JPG, GIF, or WebP, max 2MB.
+            </p>
+            {ogImageUrl ? (
+              <div className="flex items-center gap-4">
+                <div className="w-40 h-[84px] rounded-xl border border-zinc-700 bg-zinc-800 flex items-center justify-center overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={ogImageUrl} alt="OG image" className="w-full h-full object-cover" />
+                </div>
+                <button
+                  onClick={handleOgImageRemove}
+                  disabled={ogImageUploading}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg transition disabled:opacity-50"
+                >
+                  {ogImageUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <X className="w-4 h-4" />
+                  )}
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => ogImageInputRef.current?.click()}
+                onKeyDown={(e) => e.key === 'Enter' && ogImageInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleOgImageUpload(file);
+                }}
+                className="border-2 border-dashed border-zinc-700 hover:border-zinc-500 rounded-xl p-8 text-center cursor-pointer transition"
+              >
+                {ogImageUploading ? (
+                  <Loader2 className="w-8 h-8 text-zinc-500 mx-auto mb-3 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+                )}
+                <p className="text-sm text-zinc-400 mb-1">
+                  {ogImageUploading ? 'Uploading…' : 'Drag & drop or click to upload'}
+                </p>
+                <p className="text-xs text-zinc-600">1200×630px recommended · PNG, JPG, GIF, WebP up to 2MB</p>
+              </div>
+            )}
+            <input
+              ref={ogImageInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleOgImageUpload(file);
+                e.target.value = '';
+              }}
+            />
+          </section>
+
+          {/* Twitter / X Handle */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1.5">Twitter / X Handle</h3>
+            <p className="text-xs text-zinc-500 mb-3">
+              Used for Twitter Card attribution (e.g. @yourhandle).
+            </p>
+            <input
+              type="text"
+              value={socialTwitter}
+              onChange={(e) => setSocialTwitter(e.target.value)}
+              placeholder="@yourhandle"
+              className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            />
+          </section>
+
+          {/* Favicon Upload */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-1.5">Favicon</h3>
+            <p className="text-xs text-zinc-500 mb-4">
+              The small icon shown in the browser tab. PNG, ICO, or SVG, max 512KB.
+            </p>
+            {faviconUrl ? (
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg border border-zinc-700 bg-zinc-800 flex items-center justify-center overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={faviconUrl} alt="Favicon" className="w-full h-full object-contain p-1" />
+                </div>
+                <button
+                  onClick={handleFaviconRemove}
+                  disabled={faviconUploading}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg transition disabled:opacity-50"
+                >
+                  {faviconUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <X className="w-4 h-4" />
+                  )}
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => faviconInputRef.current?.click()}
+                onKeyDown={(e) => e.key === 'Enter' && faviconInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleFaviconUpload(file);
+                }}
+                className="border-2 border-dashed border-zinc-700 hover:border-zinc-500 rounded-xl p-6 text-center cursor-pointer transition"
+              >
+                {faviconUploading ? (
+                  <Loader2 className="w-6 h-6 text-zinc-500 mx-auto mb-2 animate-spin" />
+                ) : (
+                  <Globe className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
+                )}
+                <p className="text-sm text-zinc-400">
+                  {faviconUploading ? 'Uploading…' : 'Upload favicon'}
+                </p>
+              </div>
+            )}
+            <input
+              ref={faviconInputRef}
+              type="file"
+              accept="image/png,image/x-icon,image/svg+xml,image/vnd.microsoft.icon"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFaviconUpload(file);
+                e.target.value = '';
+              }}
+            />
+          </section>
+
+          {/* SERP Preview */}
+          <section>
+            <h3 className="text-sm font-medium text-zinc-300 mb-4">
+              <Search className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
+              Google Search Preview
+            </h3>
+            <div className="bg-white rounded-xl p-5 max-w-xl">
+              <div className="text-sm text-[#202124] mb-1 truncate">
+                {space.custom_domain
+                  ? `https://${space.custom_domain}`
+                  : `https://${space.slug}.blinkbook.goblink.io`}
+              </div>
+              <div className="text-xl text-[#1a0dab] mb-1 truncate leading-snug hover:underline cursor-default">
+                {metaTitle || space.name}
+              </div>
+              <div className="text-sm text-[#4d5156] line-clamp-2 leading-relaxed">
+                {metaDescription || space.description || `Documentation for ${space.name}`}
+              </div>
+            </div>
+          </section>
+
+          <button
+            onClick={() =>
+              save({
+                meta_title: metaTitle.trim() || null,
+                meta_description: metaDescription.trim() || null,
+                social_twitter: socialTwitter.trim() || null,
+              })
+            }
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg transition"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            Save SEO Settings
           </button>
         </div>
       )}

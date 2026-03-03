@@ -14,6 +14,11 @@ const updatePageSchema = z.object({
   is_published: z.boolean().optional(),
   last_reviewed_at: z.string().datetime().nullable().optional(),
   review_exempt: z.boolean().optional(),
+  // SEO
+  meta_title: z.string().max(200).nullable().optional(),
+  meta_description: z.string().max(500).nullable().optional(),
+  og_image_url: z.string().url().nullable().optional(),
+  noindex: z.boolean().optional(),
 });
 
 export async function GET(
