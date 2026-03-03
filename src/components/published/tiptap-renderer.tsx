@@ -99,7 +99,7 @@ function renderNode(node: TiptapNode): string {
     }
 
     case 'table':
-      return `<table>${renderChildren(node.content)}</table>`;
+      return `<div class="bb-table-wrapper"><table>${renderChildren(node.content)}</table></div>`;
 
     case 'tableRow':
       return `<tr>${renderChildren(node.content)}</tr>`;
