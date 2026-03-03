@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import type { BBPage, TiptapNode } from '@/types/database';
+import { renderTiptapDoc, extractHeadings } from '@/components/published/tiptap-renderer';
+import type { BBPage, TiptapNode, TiptapDoc } from '@/types/database';
 
 function extractText(node: TiptapNode): string {
   if (node.text) return node.text;
@@ -78,6 +79,23 @@ export async function POST(
   await supabase.storage
     .from('published-sites')
     .upload(`${id}/search-index.json`, indexBlob, {
+      contentType: 'application/json',
+      upsert: true,
+    });
+
+  // Pre-render static HTML bundle
+  const staticPages = allPages.map((page) => {
+    const renderedHtml = renderTiptapDoc(page.content as TiptapDoc);
+    const headings = extractHeadings(page.content as TiptapDoc);
+    return { ...page, renderedHtml, headings };
+  });
+
+  const bundleJson = JSON.stringify({ space, pages: staticPages });
+  const bundleBlob = new Blob([bundleJson], { type: 'application/json' });
+
+  await supabase.storage
+    .from('published-sites')
+    .upload(`${id}/static-bundle.json`, bundleBlob, {
       contentType: 'application/json',
       upsert: true,
     });

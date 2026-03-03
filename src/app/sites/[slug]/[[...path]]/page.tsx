@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
@@ -6,9 +7,9 @@ import { renderTiptapDoc, extractHeadings, TiptapContent } from '@/components/pu
 import { PageviewTracker } from '@/components/published/pageview-tracker';
 import type { BBPage, BBSpace, TiptapDoc } from '@/types/database';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
-async function getSpaceAndPages(slug: string) {
+const getSpaceAndPages = cache(async function getSpaceAndPages(slug: string) {
   const supabase = await createClient();
 
   // Look up space by slug or custom_domain
@@ -34,6 +35,24 @@ async function getSpaceAndPages(slug: string) {
 
   const typedSpace = space as BBSpace;
 
+  // Try loading pre-rendered static bundle from storage first
+  const { data: bundleData } = await supabase.storage
+    .from('published-sites')
+    .download(`${typedSpace.id}/static-bundle.json`);
+
+  if (bundleData) {
+    try {
+      const bundle = JSON.parse(await bundleData.text());
+      return {
+        space: typedSpace,
+        pages: bundle.pages as (BBPage & { renderedHtml: string; headings: { id: string; text: string; level: number }[] })[],
+      };
+    } catch {
+      // Fall through to Postgres query
+    }
+  }
+
+  // Fall back to Postgres query for pages
   const { data: pages } = await supabase
     .from('bb_pages')
     .select('*')
@@ -42,7 +61,7 @@ async function getSpaceAndPages(slug: string) {
     .order('position', { ascending: true });
 
   return { space: typedSpace, pages: (pages ?? []) as BBPage[] };
-}
+});
 
 export async function generateMetadata({
   params,
@@ -111,9 +130,10 @@ export default async function PublishedSitePage({
     notFound();
   }
 
-  // Render content
-  const html = renderTiptapDoc(currentPage.content as TiptapDoc);
-  const headings = extractHeadings(currentPage.content as TiptapDoc);
+  // Use pre-rendered HTML from static bundle, or render on the fly
+  const bundlePage = currentPage as BBPage & { renderedHtml?: string; headings?: { id: string; text: string; level: number }[] };
+  const html = bundlePage.renderedHtml ?? renderTiptapDoc(currentPage.content as TiptapDoc);
+  const headings = bundlePage.headings ?? extractHeadings(currentPage.content as TiptapDoc);
 
   return (
     <PublishedLayout

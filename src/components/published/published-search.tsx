@@ -49,16 +49,54 @@ export function PublishedSearch({ spaceSlug }: { spaceSlug: string }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Load search index
+  // Load search index with localStorage caching
+  const fetchedRef = useRef(false);
   useEffect(() => {
-    if (!open || entries.length > 0) return;
-    fetch(`/api/sites/${spaceSlug}/search`)
-      .then((r) => r.json())
-      .then((data) => {
+    if (!open || fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    const cacheKey = `bb_search_${spaceSlug}`;
+    const tsKey = `bb_search_${spaceSlug}_ts`;
+    const etagKey = `bb_search_${spaceSlug}_etag`;
+
+    // Load from localStorage first (instant results)
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const data = JSON.parse(cached);
         if (Array.isArray(data)) setEntries(data);
+      }
+    } catch { /* ignore corrupt cache */ }
+
+    // Skip network fetch if cache is fresh (< 5 minutes)
+    const cachedTs = localStorage.getItem(tsKey);
+    if (cachedTs && (Date.now() - Number(cachedTs)) < 5 * 60 * 1000) return;
+
+    // Background refresh with ETag
+    const headers: HeadersInit = {};
+    const cachedEtag = localStorage.getItem(etagKey);
+    if (cachedEtag) headers['If-None-Match'] = cachedEtag;
+
+    fetch(`/api/sites/${spaceSlug}/search`, { headers })
+      .then((r) => {
+        if (r.status === 304) {
+          // Index unchanged, just update timestamp
+          localStorage.setItem(tsKey, String(Date.now()));
+          return null;
+        }
+        const etag = r.headers.get('ETag');
+        if (etag) localStorage.setItem(etagKey, etag);
+        return r.json();
+      })
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setEntries(data);
+          localStorage.setItem(cacheKey, JSON.stringify(data));
+          localStorage.setItem(tsKey, String(Date.now()));
+        }
       })
       .catch(() => {});
-  }, [open, spaceSlug, entries.length]);
+  }, [open, spaceSlug]);
 
   // Keyboard shortcut
   useEffect(() => {

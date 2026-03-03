@@ -18,22 +18,55 @@ export async function GET(
   const days = period === '90d' ? 90 : period === '30d' ? 30 : 7;
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-  // Fetch all analytics for this space in the period
-  const { data: events } = await supabase
-    .from('bb_analytics')
-    .select('*')
-    .eq('space_id', id)
-    .gte('created_at', since)
-    .order('created_at', { ascending: true });
-
-  const allEvents = events ?? [];
-
-  // Pageviews per day
+  // Pageviews per day + page views + searches aggregation maps
   const pvByDay = new Map<string, number>();
   const pageViews = new Map<string, number>();
   const searches = new Map<string, number>();
 
-  for (const ev of allEvents) {
+  // For periods > 7 days, fetch from the daily rollup table for older data
+  if (days > 7) {
+    const dailySince = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const rawCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: dailyRows } = await supabase
+      .from('bb_analytics_daily')
+      .select('*')
+      .eq('space_id', id)
+      .gte('date', dailySince.split('T')[0])
+      .lt('date', rawCutoff.split('T')[0]);
+
+    for (const row of dailyRows ?? []) {
+      const date = row.date;
+
+      if (row.event === 'pageview') {
+        pvByDay.set(date, (pvByDay.get(date) ?? 0) + row.count);
+        if (row.page_id) {
+          pageViews.set(row.page_id, (pageViews.get(row.page_id) ?? 0) + row.count);
+        }
+      }
+
+      if (row.event === 'search' && row.metadata?.queries) {
+        for (const q of row.metadata.queries) {
+          const query = String(q);
+          searches.set(query, (searches.get(query) ?? 0) + 1);
+        }
+      }
+    }
+  }
+
+  // Always fetch recent raw events (last 7 days or full period if <= 7 days)
+  const rawSince = days > 7
+    ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    : since;
+
+  const { data: events } = await supabase
+    .from('bb_analytics')
+    .select('*')
+    .eq('space_id', id)
+    .gte('created_at', rawSince)
+    .order('created_at', { ascending: true });
+
+  for (const ev of events ?? []) {
     const date = ev.created_at.split('T')[0];
 
     if (ev.event === 'pageview') {
