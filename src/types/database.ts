@@ -28,6 +28,8 @@ export interface BBSpace {
   review_reminder_days: number;
   // AI-ready docs
   llms_txt_enabled: boolean;
+  // Token gating
+  is_gated: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -58,6 +60,7 @@ export interface BBPage {
   parent_id: string | null;
   position: number;
   is_published: boolean;
+  is_gated: boolean;
   last_reviewed_at: string | null;
   review_exempt: boolean;
   created_at: string;
@@ -158,6 +161,19 @@ export interface BBBrokenLink {
   error: string | null;
   last_checked_at: string;
   is_broken: boolean;
+}
+
+export interface BBAccessRule {
+  id: string;
+  space_id: string;
+  page_id: string | null;
+  chain: string;
+  contract_address: string;
+  token_type: string;
+  min_amount: number;
+  token_id: string | null;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface BBSpaceWithPageCount extends BBSpace {
