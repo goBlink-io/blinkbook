@@ -63,8 +63,8 @@ const features = [
   },
   {
     icon: <Code2 className="w-5 h-5" />,
-    title: "API Playground",
-    desc: "Interactive API explorer built in. Let developers test endpoints right from your docs.",
+    title: "Code Blocks",
+    desc: "Syntax-highlighted code with copy button, multi-language tabs, and inline formatting.",
   },
   {
     icon: <DollarSign className="w-5 h-5" />,
@@ -100,16 +100,16 @@ const comparison: {
   mintlify: string | boolean;
   docusaurus: string | boolean;
 }[] = [
-  { feature: "Block editor", blinkbook: CHECK, gitbook: CHECK, mintlify: CROSS, docusaurus: CROSS },
+  { feature: "Block editor", blinkbook: CHECK, gitbook: CHECK, mintlify: CHECK, docusaurus: CROSS },
   { feature: "Custom domains", blinkbook: CHECK, gitbook: CHECK, mintlify: CHECK, docusaurus: CHECK },
   { feature: "Instant search", blinkbook: CHECK, gitbook: CHECK, mintlify: CHECK, docusaurus: CHECK },
-  { feature: "API playground", blinkbook: CHECK, gitbook: CROSS, mintlify: CHECK, docusaurus: CROSS },
   { feature: "Team collaboration", blinkbook: CHECK, gitbook: CHECK, mintlify: CHECK, docusaurus: CROSS },
   { feature: "Analytics", blinkbook: CHECK, gitbook: CHECK, mintlify: CHECK, docusaurus: CROSS },
   { feature: "Themes", blinkbook: "6 built-in", gitbook: "Limited", mintlify: "Limited", docusaurus: "Custom only" },
   { feature: "Flat pricing", blinkbook: CHECK, gitbook: CROSS, mintlify: CROSS, docusaurus: "N/A" },
-  { feature: "Starting price", blinkbook: "Free", gitbook: "Freemium", mintlify: "$150/mo", docusaurus: "Free (DIY)" },
-  { feature: "No per-seat fees", blinkbook: CHECK, gitbook: CROSS, mintlify: CROSS, docusaurus: "N/A" },
+  { feature: "Starting price", blinkbook: "Free", gitbook: "$10/user/mo", mintlify: "$300/mo", docusaurus: "Free (DIY)" },
+  { feature: "No per-seat fees", blinkbook: CHECK, gitbook: CROSS, mintlify: CHECK, docusaurus: "N/A" },
+  { feature: "AI-ready (llms.txt)", blinkbook: CHECK, gitbook: CROSS, mintlify: CROSS, docusaurus: CROSS },
 ];
 
 /* ─── Pricing tiers ─── */
@@ -153,8 +153,8 @@ const pricingTiers = [
       "10 spaces, 10 team members",
       "250K pageviews/mo",
       "Role-based access",
-      "Token-gated pages",
-      "Content monetization",
+      "Token-gated pages (coming soon)",
+      "Content monetization (coming soon)",
     ],
   },
   {
@@ -171,7 +171,7 @@ const pricingTiers = [
       "1M pageviews/mo",
       "25 team members",
       "White-label rebrand",
-      "SSO/SAML (coming soon)",
+      "Priority support",
     ],
   },
 ];
@@ -322,9 +322,9 @@ export default function LandingPage() {
                 <div className="rounded-lg bg-[#0d1117] p-3 font-mono text-xs">
                   <div className="text-zinc-500">
                     {"// "}
-                    <span className="text-green-400">Install BlinkBook SDK</span>
+                    <span className="text-green-400">Quick start</span>
                   </div>
-                  <div className="text-blue-400">npm install @blinkbook/sdk</div>
+                  <div className="text-blue-400">npx create-next-app my-docs</div>
                 </div>
               </div>
             </div>
@@ -462,14 +462,16 @@ export default function LandingPage() {
                 <div className="flex items-start gap-2 group">
                   <GripVertical className="w-4 h-4 text-zinc-700 mt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                   <div className="flex-1 rounded-lg bg-[#0d1117] p-3 font-mono text-xs">
-                    <div className="text-zinc-500 mb-1">typescript</div>
+                    <div className="text-zinc-500 mb-1">javascript</div>
                     <div>
                       <span className="text-violet-400">const</span>{" "}
-                      <span className="text-blue-300">sdk</span>{" "}
+                      <span className="text-blue-300">config</span>{" "}
                       <span className="text-zinc-500">=</span>{" "}
-                      <span className="text-yellow-300">new</span>{" "}
-                      <span className="text-green-400">goBlink Book</span>
-                      <span className="text-zinc-400">()</span>
+                      <span className="text-zinc-400">{"{"}</span>{" "}
+                      <span className="text-green-400">theme</span>
+                      <span className="text-zinc-500">:</span>{" "}
+                      <span className="text-amber-300">&quot;midnight&quot;</span>{" "}
+                      <span className="text-zinc-400">{"}"}</span>
                     </div>
                   </div>
                 </div>
@@ -701,7 +703,7 @@ export default function LandingPage() {
                 merchant.goblink.io
               </a>
               <a
-                href="https://github.com/Urban-Blazer"
+                href="https://github.com/goBlink-io"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-zinc-500 hover:text-zinc-300 transition-colors"
