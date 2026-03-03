@@ -28,11 +28,11 @@ export default async function robots({
       userAgent: '*',
       allow: '/',
     },
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 
   if (typedSpace?.llms_txt_enabled) {
     result.host = baseUrl;
-    result.sitemap = `${baseUrl}/sitemap.xml`;
     // Additional metadata to help AI agents discover llms.txt
     result.rules = [
       {

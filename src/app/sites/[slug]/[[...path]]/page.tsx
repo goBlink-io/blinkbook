@@ -95,36 +95,88 @@ export async function generateMetadata({
   const result = await getSpaceAndPages(slug);
   if (!result || result.pages.length === 0) return {};
 
+  const { space } = result;
   const pageSlug = path?.[0] ?? result.pages[0].slug;
   const currentPage = result.pages.find((p) => p.slug === pageSlug);
   if (!currentPage) return {};
 
-  const title = `${currentPage.title} — ${result.space.name}`;
-  const description = result.space.description || `Documentation for ${result.space.name}`;
-  const baseUrl = result.space.custom_domain
-    ? `https://${result.space.custom_domain}`
-    : `https://${result.space.slug}.blinkbook.goblink.io`;
+  const title = currentPage.meta_title ?? `${currentPage.title} — ${space.name}`;
+  const description = currentPage.meta_description
+    ?? space.meta_description
+    ?? space.description
+    ?? `Documentation for ${space.name}`;
+  const baseUrl = space.custom_domain
+    ? `https://${space.custom_domain}`
+    : `https://${space.slug}.blinkbook.goblink.io`;
   const url = `${baseUrl}/${currentPage.slug}`;
 
-  return {
+  // OG image: page override → space override → auto-generated
+  const ogImageUrl = currentPage.og_image_url
+    ?? space.og_image_url
+    ?? `${baseUrl}/api/og?${new URLSearchParams({
+        title: currentPage.title,
+        spaceName: space.name,
+        ...(description ? { description } : {}),
+        theme: space.brand_primary_color ?? '#3B82F6',
+      }).toString()}`;
+
+  const metadata: Metadata = {
     title,
     description,
     openGraph: {
       title,
       description,
       url,
-      siteName: result.space.name,
+      siteName: space.name,
       type: 'article',
+      images: [{ url: ogImageUrl, width: 1200, height: 630 }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
+      images: [ogImageUrl],
+      ...(space.social_twitter ? { site: space.social_twitter } : {}),
     },
     alternates: {
       canonical: url,
     },
   };
+
+  if (currentPage.noindex) {
+    metadata.robots = { index: false, follow: true };
+  }
+
+  return metadata;
+}
+
+function buildJsonLd(space: BBSpace, page: BBPage, url: string, ogImageUrl: string, description: string) {
+  const baseUrl = space.custom_domain
+    ? `https://${space.custom_domain}`
+    : `https://${space.slug}.blinkbook.goblink.io`;
+
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'TechArticle',
+      headline: page.meta_title ?? page.title,
+      description,
+      dateModified: page.updated_at,
+      image: ogImageUrl,
+      author: {
+        '@type': 'Organization',
+        name: space.name,
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: space.name, item: baseUrl },
+        { '@type': 'ListItem', position: 2, name: page.title, item: url },
+      ],
+    },
+  ];
 }
 
 export default async function PublishedSitePage({
@@ -171,6 +223,10 @@ export default async function PublishedSitePage({
         updated_at: vp.created_at,
         last_reviewed_at: null,
         review_exempt: false,
+        meta_title: null,
+        meta_description: null,
+        og_image_url: null,
+        noindex: false,
       }));
       activeVersionId = versionId;
     } else {
@@ -248,6 +304,25 @@ export default async function PublishedSitePage({
     teaserHtml = `<p>${teaserText}${plainText.length > 200 ? '...' : ''}</p>`;
   }
 
+  // JSON-LD structured data
+  const pageBaseUrl = space.custom_domain
+    ? `https://${space.custom_domain}`
+    : `https://${space.slug}.blinkbook.goblink.io`;
+  const pageUrl = `${pageBaseUrl}/${currentPage.slug}`;
+  const pageDescription = currentPage.meta_description
+    ?? space.meta_description
+    ?? space.description
+    ?? `Documentation for ${space.name}`;
+  const pageOgImage = currentPage.og_image_url
+    ?? space.og_image_url
+    ?? `${pageBaseUrl}/api/og?${new URLSearchParams({
+        title: currentPage.title,
+        spaceName: space.name,
+        ...(pageDescription ? { description: pageDescription } : {}),
+        theme: space.brand_primary_color ?? '#3B82F6',
+      }).toString()}`;
+  const jsonLd = buildJsonLd(space, currentPage, pageUrl, pageOgImage, pageDescription);
+
   return (
     <PublishedLayout
       space={space}
@@ -257,6 +332,10 @@ export default async function PublishedSitePage({
       versions={versions}
       currentVersionId={activeVersionId}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">{currentPage.title}</h1>
       {showPaywall && paidContent ? (
         <Paywall
