@@ -29,6 +29,8 @@ const updateSpaceSchema = z.object({
   // Review reminders
   review_reminder_enabled: z.boolean().optional(),
   review_reminder_days: z.number().int().min(7).max(365).optional(),
+  // AI-ready docs
+  llms_txt_enabled: z.boolean().optional(),
 });
 
 export async function GET(
