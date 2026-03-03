@@ -165,6 +165,8 @@ export default async function PublishedSitePage({
         is_published: true,
         created_at: vp.created_at,
         updated_at: vp.created_at,
+        last_reviewed_at: null,
+        review_exempt: false,
       }));
       activeVersionId = versionId;
     } else {
