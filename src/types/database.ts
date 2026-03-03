@@ -95,7 +95,16 @@ export interface BBFeedback {
   page_id: string;
   helpful: boolean;
   comment: string | null;
+  user_fingerprint: string | null;
   created_at: string;
+}
+
+export interface BBPageFeedbackSummary {
+  page_id: string;
+  helpful_count: number;
+  not_helpful_count: number;
+  total: number;
+  helpful_pct: number;
 }
 
 export interface BBSpaceWithPageCount extends BBSpace {
