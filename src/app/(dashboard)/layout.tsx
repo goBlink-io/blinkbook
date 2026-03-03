@@ -36,7 +36,7 @@ export default async function DashboardLayout({
         }}
       />
       <main className="flex-1 overflow-auto">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-16 lg:pt-8 pb-8">
           <KeyboardShortcutsProvider>
             {children}
           </KeyboardShortcutsProvider>

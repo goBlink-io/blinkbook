@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import { PublishedSearch } from './published-search';
 import { PublishedVersionSwitcher } from './published-version-switcher';
+import { MobileNavDrawer } from './mobile-nav-drawer';
+import { MobileToc } from './mobile-toc';
 import type { BBSpace, BBPage, BBVersion } from '@/types/database';
 
 /** Google Fonts URL for the brand font (if not a system font). */
@@ -161,20 +163,29 @@ export function PublishedLayout({
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-lg">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between h-14 px-4 lg:px-8">
-          <Link href={`/sites/${space.slug}`} className="flex items-center gap-2.5">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="" className="w-7 h-7 rounded object-contain" />
-            ) : (
-              <div
-                className="w-7 h-7 rounded flex items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}
-              >
-                <BookOpen className="w-3.5 h-3.5 text-white" />
-              </div>
-            )}
-            <span className="text-sm font-bold text-white">{space.name}</span>
-          </Link>
+          <div className="flex items-center gap-1">
+            <MobileNavDrawer
+              navTree={navTree}
+              spaceSlug={space.slug}
+              currentSlug={currentSlug}
+              primaryColor={primaryColor}
+              spaceName={space.name}
+            />
+            <Link href={`/sites/${space.slug}`} className="flex items-center gap-2.5">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt="" className="w-7 h-7 rounded object-contain" />
+              ) : (
+                <div
+                  className="w-7 h-7 rounded flex items-center justify-center"
+                  style={{ background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})` }}
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+              <span className="text-sm font-bold text-white">{space.name}</span>
+            </Link>
+          </div>
           <div className="flex items-center gap-3">
             {versions && versions.length > 1 && (
               <PublishedVersionSwitcher
@@ -206,6 +217,7 @@ export function PublishedLayout({
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 px-6 lg:px-12 py-8 lg:py-12">
+          <MobileToc headings={headings} />
           <div className="max-w-3xl">{children}</div>
         </main>
 

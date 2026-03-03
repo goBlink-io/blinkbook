@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { BookOpen, LayoutGrid, User, CreditCard, LogOut, Users, Lock, Settings, BarChart3, FileText, GitBranch, LinkIcon, Shield, DollarSign } from 'lucide-react';
+import { BookOpen, LayoutGrid, User, CreditCard, LogOut, Users, Lock, Settings, BarChart3, FileText, GitBranch, LinkIcon, Shield, DollarSign, Menu, X } from 'lucide-react';
 
 interface SidebarProps {
   user: {
@@ -23,6 +23,7 @@ const navItems = [
 export function DashboardSidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -35,15 +36,28 @@ export function DashboardSidebar({ user }: SidebarProps) {
   const siteMatch = pathname.match(/^\/dashboard\/([a-f0-9-]{36})/);
   const siteId = siteMatch?.[1] ?? null;
 
-  return (
-    <aside className="w-64 border-r border-zinc-800 bg-zinc-950 flex flex-col shrink-0">
-      <div className="p-5 border-b border-zinc-800">
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const sidebarContent = (
+    <>
+      <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center">
             <BookOpen className="w-4 h-4 text-white" />
           </div>
           <span className="text-lg font-bold text-white">BlinkBook</span>
         </Link>
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden p-2 text-zinc-400 hover:text-white transition"
+          aria-label="Close sidebar"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       <nav className="flex-1 p-3 space-y-1 overflow-auto">
@@ -93,7 +107,44 @@ export function DashboardSidebar({ user }: SidebarProps) {
           </button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile hamburger — fixed top-left, visible below lg */}
+      <button
+        type="button"
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-30 p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white transition"
+        aria-label="Open sidebar"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Desktop sidebar — always visible at lg+ */}
+      <aside className="hidden lg:flex w-64 border-r border-zinc-800 bg-zinc-950 flex-col shrink-0">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile backdrop */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 lg:hidden ${
+          mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Mobile drawer */}
+      <aside
+        className={`fixed top-0 left-0 z-50 h-full w-72 bg-zinc-950 border-r border-zinc-800 flex flex-col transform transition-transform duration-300 ease-in-out lg:hidden ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 }
 
