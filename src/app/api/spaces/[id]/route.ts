@@ -26,6 +26,9 @@ const updateSpaceSchema = z.object({
   brand_accent_color: z.string().regex(HEX_COLOR).optional(),
   brand_font: z.enum(BRAND_FONTS).optional(),
   brand_hide_powered_by: z.boolean().optional(),
+  // Review reminders
+  review_reminder_enabled: z.boolean().optional(),
+  review_reminder_days: z.number().int().min(7).max(365).optional(),
 });
 
 export async function GET(

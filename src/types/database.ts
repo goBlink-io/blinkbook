@@ -23,8 +23,19 @@ export interface BBSpace {
   brand_accent_color: string;
   brand_font: string;
   brand_hide_powered_by: boolean;
+  // Review reminders
+  review_reminder_enabled: boolean;
+  review_reminder_days: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface BBReviewLog {
+  id: string;
+  page_id: string;
+  space_id: string;
+  sent_at: string;
+  sent_to: string;
 }
 
 export interface SpaceTheme {
@@ -45,6 +56,8 @@ export interface BBPage {
   parent_id: string | null;
   position: number;
   is_published: boolean;
+  last_reviewed_at: string | null;
+  review_exempt: boolean;
   created_at: string;
   updated_at: string;
 }
