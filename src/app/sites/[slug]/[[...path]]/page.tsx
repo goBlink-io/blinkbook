@@ -6,7 +6,9 @@ import { PublishedLayout } from '@/components/published/published-layout';
 import { renderTiptapDoc, extractHeadings, TiptapContent } from '@/components/published/tiptap-renderer';
 import { PageviewTracker } from '@/components/published/pageview-tracker';
 import { FeedbackWidget } from '@/components/published/feedback-widget';
-import type { BBPage, BBSpace, BBVersion, BBVersionPage, TiptapDoc } from '@/types/database';
+import { TokenGate } from '@/components/published/token-gate';
+import { Paywall } from '@/components/published/paywall';
+import type { BBAccessRule, BBPage, BBSpace, BBPaidContent, BBVersion, BBVersionPage, TiptapDoc } from '@/types/database';
 
 export const revalidate = 300;
 
@@ -163,6 +165,8 @@ export default async function PublishedSitePage({
         parent_id: vp.parent_id,
         position: vp.position,
         is_published: true,
+        is_gated: false,
+        is_premium: false,
         created_at: vp.created_at,
         updated_at: vp.created_at,
         last_reviewed_at: null,
@@ -188,24 +192,97 @@ export default async function PublishedSitePage({
     notFound();
   }
 
+  // Check if space or page is gated
+  if (space.is_gated || currentPage.is_gated) {
+    const supabase = await createClient();
+    const { data: accessRules } = await supabase
+      .from('bb_access_rules')
+      .select('*')
+      .eq('space_id', space.id)
+      .eq('is_active', true);
+
+    const rules = (accessRules ?? []) as BBAccessRule[];
+
+    if (rules.length > 0) {
+      return (
+        <PublishedLayout
+          space={space}
+          pages={allPages}
+          currentSlug={currentPage.slug}
+          headings={[]}
+          versions={versions}
+          currentVersionId={activeVersionId}
+        >
+          <TokenGate rules={rules} spaceName={space.name} />
+        </PublishedLayout>
+      );
+    }
+  }
+
   // Use pre-rendered HTML from static bundle, or render on the fly
   const bundlePage = currentPage as BBPage & { renderedHtml?: string; headings?: { id: string; text: string; level: number }[] };
   const html = bundlePage.renderedHtml ?? renderTiptapDoc(currentPage.content as TiptapDoc);
   const headings = bundlePage.headings ?? extractHeadings(currentPage.content as TiptapDoc);
+
+  // Check if this page is premium and monetization is enabled
+  let paidContent: BBPaidContent | null = null;
+  if (currentPage.is_premium && space.monetization_enabled) {
+    const supabase = await createClient();
+    const { data: pc } = await supabase
+      .from('bb_paid_content')
+      .select('*')
+      .eq('space_id', space.id)
+      .eq('page_id', currentPage.id)
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+    paidContent = pc as BBPaidContent | null;
+  }
+
+  // Build teaser: first 200 characters of plain text, rendered as HTML
+  const showPaywall = paidContent !== null;
+  let teaserHtml = '';
+  if (showPaywall) {
+    const plainText = extractPlainText(currentPage.content as TiptapDoc);
+    const teaserText = plainText.slice(0, 200);
+    teaserHtml = `<p>${teaserText}${plainText.length > 200 ? '...' : ''}</p>`;
+  }
 
   return (
     <PublishedLayout
       space={space}
       pages={allPages}
       currentSlug={currentPage.slug}
-      headings={headings}
+      headings={showPaywall ? [] : headings}
       versions={versions}
       currentVersionId={activeVersionId}
     >
       <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">{currentPage.title}</h1>
-      <TiptapContent html={html} />
-      <FeedbackWidget spaceId={space.id} pageId={currentPage.id} />
+      {showPaywall && paidContent ? (
+        <Paywall
+          teaser={teaserHtml}
+          priceUsd={Number(paidContent.price_usd)}
+          acceptedTokens={paidContent.accepted_tokens}
+        />
+      ) : (
+        <>
+          <TiptapContent html={html} />
+          <FeedbackWidget spaceId={space.id} pageId={currentPage.id} />
+        </>
+      )}
       <PageviewTracker spaceSlug={space.slug} pageId={currentPage.id} />
     </PublishedLayout>
   );
+}
+
+function extractPlainText(doc: TiptapDoc): string {
+  const parts: string[] = [];
+  function walk(nodes: TiptapDoc['content']) {
+    for (const node of nodes) {
+      if (node.text) parts.push(node.text);
+      if (node.content) walk(node.content);
+    }
+  }
+  walk(doc.content);
+  return parts.join(' ');
 }

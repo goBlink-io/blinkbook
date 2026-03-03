@@ -181,39 +181,56 @@ const pricingTiers = [
     cta: "Get Started Free",
     ctaHref: "/signup",
     highlighted: false,
-    features: ["1 space", "20 pages", "Subdomain hosting", "Full-text search", "Community support"],
+    features: ["1 space, 20 pages", "1,000 pageviews/mo", "Subdomain hosting", "Full-text search", "Community support"],
   },
   {
     name: "Pro",
-    price: "$12",
+    price: "$19",
     period: "/mo",
-    description: "For teams shipping products that need polished docs.",
+    description: "For creators shipping polished docs.",
     cta: "Start Pro Trial",
     ctaHref: "/signup?plan=pro",
     highlighted: true,
     badge: "Most Popular",
     features: [
-      "Unlimited spaces & pages",
+      "3 spaces, unlimited pages",
+      "50K pageviews/mo",
       "Custom domain + SSL",
-      "Analytics dashboard",
+      "Full analytics",
       "Remove branding",
-      "Priority support",
     ],
   },
   {
     name: "Team",
-    price: "$29",
+    price: "$49",
     period: "/mo",
-    description: "For organizations needing collaboration and control.",
+    description: "For organizations needing collaboration.",
     cta: "Start Team Trial",
     ctaHref: "/signup?plan=team",
     highlighted: false,
     features: [
-      "Everything in Pro",
-      "5 team members",
+      "10 spaces, 10 team members",
+      "250K pageviews/mo",
       "Role-based access",
-      "Advanced analytics",
-      "Custom branding",
+      "Token-gated pages",
+      "Content monetization",
+    ],
+  },
+  {
+    name: "Business",
+    price: "$99",
+    period: "/mo",
+    description: "Scale, control, and white-label.",
+    cta: "Start Business Trial",
+    ctaHref: "/signup?plan=business",
+    highlighted: false,
+    badge: "Best Value",
+    features: [
+      "Unlimited spaces & pages",
+      "1M pageviews/mo",
+      "25 team members",
+      "White-label rebrand",
+      "SSO/SAML (coming soon)",
     ],
   },
 ];
@@ -656,7 +673,7 @@ export default function LandingPage() {
             No per-seat charges. One price covers your entire team.
           </p>
         </Section>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {pricingTiers.map((tier, i) => (
             <Section key={tier.name} delay={i * 80}>
               <div
