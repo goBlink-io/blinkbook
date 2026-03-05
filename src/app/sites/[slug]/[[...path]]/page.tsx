@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { PublishedLayout } from '@/components/published/published-layout';
@@ -250,28 +251,35 @@ export default async function PublishedSitePage({
 
   // Check if space or page is gated
   if (space.is_gated || currentPage.is_gated) {
-    const supabase = await createClient();
-    const { data: accessRules } = await supabase
-      .from('bb_access_rules')
-      .select('*')
-      .eq('space_id', space.id)
-      .eq('is_active', true);
+    // Check for existing access proof cookie
+    const cookieStore = await cookies();
+    const accessProof = cookieStore.get('bb_access_proof');
+    const hasValidProof = !!accessProof?.value;
 
-    const rules = (accessRules ?? []) as BBAccessRule[];
+    if (!hasValidProof) {
+      const supabase = await createClient();
+      const { data: accessRules } = await supabase
+        .from('bb_access_rules')
+        .select('*')
+        .eq('space_id', space.id)
+        .eq('is_active', true);
 
-    if (rules.length > 0) {
-      return (
-        <PublishedLayout
-          space={space}
-          pages={allPages}
-          currentSlug={currentPage.slug}
-          headings={[]}
-          versions={versions}
-          currentVersionId={activeVersionId}
-        >
-          <TokenGate rules={rules} spaceName={space.name} />
-        </PublishedLayout>
-      );
+      const rules = (accessRules ?? []) as BBAccessRule[];
+
+      if (rules.length > 0) {
+        return (
+          <PublishedLayout
+            space={space}
+            pages={allPages}
+            currentSlug={currentPage.slug}
+            headings={[]}
+            versions={versions}
+            currentVersionId={activeVersionId}
+          >
+            <TokenGate rules={rules} spaceName={space.name} />
+          </PublishedLayout>
+        );
+      }
     }
   }
 
@@ -295,8 +303,16 @@ export default async function PublishedSitePage({
     paidContent = pc as BBPaidContent | null;
   }
 
+  // Check for existing purchase cookie to bypass paywall
+  let hasPurchaseProof = false;
+  if (paidContent) {
+    const cookieStore = await cookies();
+    const purchaseCookie = cookieStore.get(`bb_purchase_${paidContent.id}`);
+    hasPurchaseProof = !!purchaseCookie?.value;
+  }
+
   // Build teaser: first 200 characters of plain text, rendered as HTML
-  const showPaywall = paidContent !== null;
+  const showPaywall = paidContent !== null && !hasPurchaseProof;
   let teaserHtml = '';
   if (showPaywall) {
     const plainText = extractPlainText(currentPage.content as TiptapDoc);
@@ -342,6 +358,8 @@ export default async function PublishedSitePage({
           teaser={teaserHtml}
           priceUsd={Number(paidContent.price_usd)}
           acceptedTokens={paidContent.accepted_tokens}
+          contentId={paidContent.id}
+          payoutWallet={space.payout_wallet ?? undefined}
         />
       ) : (
         <>

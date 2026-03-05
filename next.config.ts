@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@goblink/connect"],
   pageExtensions: ["ts", "tsx", "md", "mdx"],
+  turbopack: {},
   images: {
     remotePatterns: [
       {
