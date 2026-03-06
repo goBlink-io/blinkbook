@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { signCookiePayload } from '@/lib/cookie-signing';
 
 interface RulePayload {
   id: string;
@@ -100,13 +101,11 @@ export async function POST(request: Request) {
     if (satisfied) {
       // Set an access cookie valid for 24 hours
       const cookieStore = await cookies();
-      const proof = Buffer.from(
-        JSON.stringify({
-          wallet: wallet_address,
-          rule_id: rule.id,
-          verified_at: Date.now(),
-        })
-      ).toString('base64');
+      const proof = signCookiePayload({
+        wallet: wallet_address,
+        rule_id: rule.id,
+        verified_at: Date.now(),
+      });
 
       cookieStore.set('bb_access_proof', proof, {
         httpOnly: true,

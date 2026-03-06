@@ -4,11 +4,12 @@ import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { PublishedLayout } from '@/components/published/published-layout';
-import { renderTiptapDoc, extractHeadings, TiptapContent } from '@/components/published/tiptap-renderer';
+import { renderTiptapDoc, extractHeadings, escapeHtml, TiptapContent } from '@/components/published/tiptap-renderer';
 import { PageviewTracker } from '@/components/published/pageview-tracker';
 import { FeedbackWidget } from '@/components/published/feedback-widget';
 import { TokenGate } from '@/components/published/token-gate';
 import { Paywall } from '@/components/published/paywall';
+import { verifyCookiePayload } from '@/lib/cookie-signing';
 import type { BBAccessRule, BBPage, BBSpace, BBPaidContent, BBVersion, BBVersionPage, TiptapDoc } from '@/types/database';
 
 export const revalidate = 300;
@@ -254,7 +255,9 @@ export default async function PublishedSitePage({
     // Check for existing access proof cookie
     const cookieStore = await cookies();
     const accessProof = cookieStore.get('bb_access_proof');
-    const hasValidProof = !!accessProof?.value;
+    const hasValidProof = accessProof?.value
+      ? verifyCookiePayload(accessProof.value) !== null
+      : false;
 
     if (!hasValidProof) {
       const supabase = await createClient();
@@ -308,7 +311,9 @@ export default async function PublishedSitePage({
   if (paidContent) {
     const cookieStore = await cookies();
     const purchaseCookie = cookieStore.get(`bb_purchase_${paidContent.id}`);
-    hasPurchaseProof = !!purchaseCookie?.value;
+    hasPurchaseProof = purchaseCookie?.value
+      ? verifyCookiePayload(purchaseCookie.value) !== null
+      : false;
   }
 
   // Build teaser: first 200 characters of plain text, rendered as HTML
@@ -317,7 +322,8 @@ export default async function PublishedSitePage({
   if (showPaywall) {
     const plainText = extractPlainText(currentPage.content as TiptapDoc);
     const teaserText = plainText.slice(0, 200);
-    teaserHtml = `<p>${teaserText}${plainText.length > 200 ? '...' : ''}</p>`;
+    const escaped = escapeHtml(teaserText);
+    teaserHtml = `<p>${escaped}${plainText.length > 200 ? '...' : ''}</p>`;
   }
 
   // JSON-LD structured data

@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 import { teamInviteHtml } from '@/lib/email/templates/team-invite';
 import { welcomeHtml } from '@/lib/email/templates/welcome';
 
 // Simple email send endpoint using Resend or fallback to console logging
 export async function POST(request: Request) {
+  // Require authenticated user
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { to, subject, template, data } = await request.json();
 
   let html = '';

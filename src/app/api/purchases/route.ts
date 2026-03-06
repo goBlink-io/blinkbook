@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
+import { signCookiePayload } from '@/lib/cookie-signing';
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -48,16 +49,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Set a purchase proof cookie so the page renders the full content
+  // Set a signed purchase proof cookie
   const cookieStore = await cookies();
-  const proof = Buffer.from(
-    JSON.stringify({
-      purchase_id: purchase.id,
-      wallet: buyer_wallet,
-      content_id: paid_content_id,
-      ts: Date.now(),
-    })
-  ).toString('base64');
+  const proof = signCookiePayload({
+    purchase_id: purchase.id,
+    wallet: buyer_wallet,
+    content_id: paid_content_id,
+    ts: Date.now(),
+  });
 
   cookieStore.set(`bb_purchase_${paid_content_id}`, proof, {
     httpOnly: true,
