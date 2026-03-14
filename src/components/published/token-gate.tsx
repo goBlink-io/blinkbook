@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Shield, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useWallet, ConnectButton, ConnectModal } from '@goblink/connect/react';
 import type { BBAccessRule } from '@/types/database';
@@ -71,11 +71,11 @@ export function TokenGate({ rules, spaceName }: TokenGateProps) {
   }, [isConnected, address, verifyAccess]);
 
   // Trigger verification when wallet state changes to connected
-  useState(() => {
+  useEffect(() => {
     if (isConnected && address && status === 'idle') {
       handleConnected();
     }
-  });
+  }, [isConnected, address, status, handleConnected]);
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">

@@ -25,6 +25,7 @@ export async function POST(
     .from('bb_spaces')
     .select('*')
     .eq('id', id)
+    .eq('user_id', user.id)
     .single();
 
   if (spaceError || !space) {

@@ -212,6 +212,18 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Verify space ownership
+  const { data: space } = await supabase
+    .from('bb_spaces')
+    .select('id, last_link_check_at')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!space) {
+    return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+  }
+
   // Fetch broken links for this space
   const { data: links } = await supabase
     .from('bb_broken_links')
@@ -219,13 +231,6 @@ export async function GET(
     .eq('space_id', id)
     .order('is_broken', { ascending: false })
     .order('last_checked_at', { ascending: false });
-
-  // Fetch last check timestamp from the space
-  const { data: space } = await supabase
-    .from('bb_spaces')
-    .select('last_link_check_at')
-    .eq('id', id)
-    .single();
 
   return NextResponse.json({
     links: links ?? [],

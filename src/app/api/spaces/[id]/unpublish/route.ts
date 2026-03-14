@@ -13,6 +13,18 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Verify ownership
+  const { data: space } = await supabase
+    .from('bb_spaces')
+    .select('id')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!space) {
+    return NextResponse.json({ error: 'Space not found' }, { status: 404 });
+  }
+
   const { error } = await supabase
     .from('bb_spaces')
     .update({ is_published: false })

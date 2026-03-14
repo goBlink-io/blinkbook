@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifySpaceAccess } from '@/lib/supabase/verify-space-access';
 import { z } from 'zod';
 
 const updatePageSchema = z.object({
@@ -33,6 +34,11 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const role = await verifySpaceAccess(supabase, id, user.id);
+  if (!role) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const { data, error } = await supabase
     .from('bb_pages')
     .select('*')
@@ -57,6 +63,11 @@ export async function PATCH(
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = await verifySpaceAccess(supabase, id, user.id);
+  if (!role || role === 'viewer') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const body = await request.json();
@@ -94,6 +105,11 @@ export async function DELETE(
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = await verifySpaceAccess(supabase, id, user.id);
+  if (!role || role === 'viewer') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const { error } = await supabase

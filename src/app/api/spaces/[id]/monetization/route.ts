@@ -88,12 +88,16 @@ export async function POST(
 
   // Create paid content entry if price provided
   if (price_usd !== undefined) {
+    if (typeof price_usd !== 'number' || !isFinite(price_usd) || price_usd <= 0 || price_usd > 10000) {
+      return NextResponse.json({ error: 'Price must be between $0.01 and $10,000' }, { status: 400 });
+    }
+
     const { data: content, error: insertError } = await supabase
       .from('bb_paid_content')
       .insert({
         space_id: id,
         page_id: page_id ?? null,
-        price_usd,
+        price_usd: Math.round(price_usd * 100) / 100,
         accepted_tokens: accepted_tokens ?? [],
       })
       .select()

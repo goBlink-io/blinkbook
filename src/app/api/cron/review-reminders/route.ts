@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { reviewReminderHtml } from '@/lib/email/templates/review-reminder';
+import crypto from 'crypto';
 
 const MAX_SPACES_PER_RUN = 20;
 const MAX_PAGES_PER_EMAIL = 50;
@@ -42,7 +43,8 @@ async function sendEmail(to: string, subject: string, html: string) {
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
+  if (!authHeader || !crypto.timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

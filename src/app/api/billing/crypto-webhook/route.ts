@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     .update(body)
     .digest('hex');
 
-  if (signature !== expected) {
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 

@@ -1,6 +1,22 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { signCookiePayload } from '@/lib/cookie-signing';
+import { z } from 'zod';
+
+const ruleSchema = z.object({
+  id: z.string().uuid(),
+  chain: z.string().min(1).max(50),
+  contract_address: z.string().min(1).max(200),
+  token_type: z.enum(['ERC-20', 'ERC-721', 'ERC-1155', 'SPL']),
+  min_amount: z.number().positive(),
+  token_id: z.string().max(200).nullable(),
+});
+
+const verifySchema = z.object({
+  wallet_address: z.string().min(1).max(200),
+  wallet_chain: z.string().min(1).max(50),
+  rules: z.array(ruleSchema).min(1).max(20),
+});
 
 interface RulePayload {
   id: string;
@@ -66,15 +82,13 @@ async function checkEvmBalance(
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { wallet_address, wallet_chain, rules } = body as {
-    wallet_address: string;
-    wallet_chain: string;
-    rules: RulePayload[];
-  };
+  const parsed = verifySchema.safeParse(body);
 
-  if (!wallet_address || !rules || rules.length === 0) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid data', details: parsed.error.issues }, { status: 400 });
   }
+
+  const { wallet_address, wallet_chain, rules } = parsed.data;
 
   // Check each rule — user needs to satisfy at least one rule
   for (const rule of rules) {

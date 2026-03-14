@@ -40,7 +40,12 @@ export async function POST(
     return NextResponse.json({ error: 'File too large. Maximum size is 2MB.' }, { status: 400 });
   }
 
-  const ext = file.name.split('.').pop() ?? 'png';
+  // Derive extension from validated MIME type, not user-supplied filename
+  const MIME_TO_EXT: Record<string, string> = {
+    'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg',
+    'image/gif': 'gif', 'image/webp': 'webp',
+  };
+  const ext = MIME_TO_EXT[file.type] ?? 'png';
   const path = `${user.id}/${id}.${ext}`;
   const bytes = await file.arrayBuffer();
 

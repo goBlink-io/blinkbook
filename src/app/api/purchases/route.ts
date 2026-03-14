@@ -17,6 +17,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
+  // Validate tx_hash format (hex string)
+  if (!/^0x[a-fA-F0-9]{64}$/.test(tx_hash)) {
+    return NextResponse.json({ error: 'Invalid transaction hash format' }, { status: 400 });
+  }
+
   const supabase = await createClient();
 
   // Verify the paid content exists
@@ -31,7 +36,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Paid content not found' }, { status: 404 });
   }
 
-  // Record the purchase
+  // Use the server-side price — never trust client-supplied amount
+  const authoritative_price = Number(content.price_usd);
+  if (!authoritative_price || authoritative_price <= 0) {
+    return NextResponse.json({ error: 'Invalid content price' }, { status: 400 });
+  }
+
+  // Check for duplicate tx_hash to prevent replay
+  const { data: existingPurchase } = await supabase
+    .from('bb_purchases')
+    .select('id')
+    .eq('tx_hash', tx_hash)
+    .single();
+
+  if (existingPurchase) {
+    return NextResponse.json({ error: 'Transaction already recorded' }, { status: 409 });
+  }
+
+  // Record the purchase with server-side price
   const { data: purchase, error } = await supabase
     .from('bb_purchases')
     .insert({
@@ -39,7 +61,7 @@ export async function POST(request: Request) {
       buyer_wallet,
       buyer_chain,
       tx_hash,
-      amount_usd: amount_usd ?? Number(content.price_usd),
+      amount_usd: authoritative_price,
       status: 'pending',
     })
     .select()

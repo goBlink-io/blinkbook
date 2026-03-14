@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { verifySpaceAccess } from '@/lib/supabase/verify-space-access';
 import { z } from 'zod';
 
 const createVersionSchema = z.object({
@@ -16,6 +17,11 @@ export async function GET(
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const role = await verifySpaceAccess(supabase, id, user.id);
+  if (!role) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const { data, error } = await supabase
@@ -43,11 +49,12 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify space exists and user owns it
+  // Verify space ownership
   const { data: space } = await supabase
     .from('bb_spaces')
     .select('id')
     .eq('id', id)
+    .eq('user_id', user.id)
     .single();
 
   if (!space) {

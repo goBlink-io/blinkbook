@@ -19,11 +19,12 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify space exists and user owns it
+  // Verify space ownership
   const { data: space } = await supabase
     .from('bb_spaces')
     .select('id')
     .eq('id', id)
+    .eq('user_id', user.id)
     .single();
 
   if (!space) {
@@ -78,6 +79,18 @@ export async function DELETE(
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Verify space ownership
+  const { data: space } = await supabase
+    .from('bb_spaces')
+    .select('id')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!space) {
+    return NextResponse.json({ error: 'Space not found' }, { status: 404 });
   }
 
   const { error } = await supabase

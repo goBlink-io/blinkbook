@@ -161,7 +161,7 @@ export function ApiPlayground({
         {showHeaders && (
           <div className="px-4 pb-3 space-y-2">
             {headers.map(([k, v], i) => (
-              <div key={i} className="flex gap-2">
+              <div key={`header-${k}-${i}`} className="flex gap-2">
                 <input
                   value={k}
                   onChange={(e) => {
